@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulaciones de Exclusión Mutua</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #22d3ee 0%, #e879f9 100%);
+      --secondary-gradient: linear-gradient(135deg, #f5f3ff 0%, #f0f9ff 50%, #f0fdf4 100%);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #fafafa 0%, #f5f1ff 50%, #f0fdf4 100%);
+      color: #1f2937;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animaciones de fondo */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(20px); }
+    }
+
+    .bg-decoration {
+      position: fixed;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      opacity: 0.08;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .bg-deco-1 {
+      background: radial-gradient(circle, #22d3ee, transparent);
+      top: -150px;
+      left: -150px;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .bg-deco-2 {
+      background: radial-gradient(circle, #e879f9, transparent);
+      bottom: -100px;
+      right: -100px;
+      animation: float 8s ease-in-out infinite reverse;
+    }
+
+    /* Estilos personalizados */
+    .title-main {
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: 800;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 30px rgba(34, 211, 238, 0.2);
+      letter-spacing: -1px;
+    }
+
+    .subtitle {
+      color: #4b5563;
+      font-weight: 300;
+    }
+
+    .tagline {
+      color: #6b7280;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Tarjetas de algoritmos */
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes float-card {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 1; }
+    }
+
+    .algo-card {
+      position: relative;
+      background: linear-gradient(135deg, #ffffff 0%, #f9f5ff 50%, #f0fdf4 100%) !important;
+      backdrop-filter: blur(12px);
+      border: 2px solid rgba(139, 92, 246, 0.2) !important;
+      border-radius: 24px;
+      overflow: hidden;
+      transition: all 0.5s cubic-bezier(0.23, 1, 0.320, 1);
+      animation: slideInUp 1s ease-out;
+      animation-delay: calc(var(--card-index, 0) * 0.2s);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .algo-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(34, 211, 238, 0.1), transparent);
+      border-radius: 50%;
+      transition: all 0.8s cubic-bezier(0.23, 1, 0.320, 1);
+      opacity: 0;
+      z-index: 0;
+    }
+
+    .algo-card:hover::before {
+      top: -20%;
+      right: -20%;
+      opacity: 1;
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    .algo-card:hover {
+      transform: translateY(-15px);
+      border-color: rgba(139, 92, 246, 0.4) !important;
+      box-shadow: 0 30px 80px rgba(139, 92, 246, 0.15), 0 0 60px rgba(139, 92, 246, 0.1);
+    }
+
+    .card-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .card-icon {
+      font-size: 4rem;
+      margin-bottom: 15px;
+      display: inline-block;
+      animation: bounce-icon 2s ease-in-out infinite;
+      animation-delay: calc(var(--card-index, 0) * 0.2s);
+    }
+
+    @keyframes bounce-icon {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-10px) scale(1.1); }
+    }
+
+    .card-number {
+      font-size: 3rem;
+      font-weight: 800;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      opacity: 0.3;
+      position: absolute;
+      top: 10px;
+      right: 20px;
+    }
+
+    .card-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .card-subtitle {
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .card-description {
+      color: #374151;
+      line-height: 1.6;
+      flex-grow: 1;
+    }
+
+    /* Colores por algoritmo */
+    .algo-card.centralizado {
+      --algo-color: #22d3ee;
+    }
+
+    .algo-card.centralizado:hover {
+      border-color: rgba(34, 211, 238, 0.6) !important;
+      box-shadow: 0 20px 50px rgba(34, 211, 238, 0.2), 0 0 30px rgba(34, 211, 238, 0.1);
+    }
+
+    .algo-card.ricardAgrawala {
+      --algo-color: #e879f9;
+    }
+
+    .algo-card.ricardAgrawala:hover {
+      border-color: rgba(232, 121, 249, 0.6) !important;
+      box-shadow: 0 20px 50px rgba(232, 121, 249, 0.2), 0 0 30px rgba(232, 121, 249, 0.1);
+    }
+
+    .algo-card.tokenRing {
+      --algo-color: #4ade80;
+    }
+
+    .algo-card.tokenRing:hover {
+      border-color: rgba(74, 222, 128, 0.6) !important;
+      box-shadow: 0 20px 50px rgba(74, 222, 128, 0.2), 0 0 30px rgba(74, 222, 128, 0.1);
+    }
+
+    /* Feature tags */
+    .feature-tag {
+      font-size: 0.75rem;
+      padding: 5px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .centralizado .feature-tag {
+      background: rgba(34, 211, 238, 0.2);
+      color: #22d3ee;
+      border: 1px solid rgba(34, 211, 238, 0.3);
+    }
+
+    .ricardAgrawala .feature-tag {
+      background: rgba(232, 121, 249, 0.2);
+      color: #e879f9;
+      border: 1px solid rgba(232, 121, 249, 0.3);
+    }
+
+    .tokenRing .feature-tag {
+      background: rgba(74, 222, 128, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    /* Botones */
+    .btn-launch {
+      width: 100%;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .btn-launch::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      transition: left 0.3s ease;
+      z-index: -1;
+    }
+
+    .btn-launch:hover::before {
+      left: 100%;
+    }
+
+    .centralizado .btn-launch {
+      background: linear-gradient(135deg, #22d3ee, #0ea5e9);
+      color: #0d0d1f;
+    }
+
+    .centralizado .btn-launch:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(34, 211, 238, 0.4);
+    }
+
+    .ricardAgrawala .btn-launch {
+      background: linear-gradient(135deg, #e879f9, #d946ef);
+      color: #0d0d1f;
+    }
+
+    .ricardAgrawala .btn-launch:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(232, 121, 249, 0.4);
+    }
+
+    .tokenRing .btn-launch {
+      background: linear-gradient(135deg, #4ade80, #22c55e);
+      color: #0d0d1f;
+    }
+
+    .tokenRing .btn-launch:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(74, 222, 128, 0.4);
+    }
+
+    /* Footer */
+    .footer-info {
+      text-align: center;
+      padding-top: 40px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: #64748b;
+    }
+
+    .info-links a {
+      color: #6b7280;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .info-links a:hover {
+      color: #22d3ee;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .card-icon {
+        font-size: 3rem;
+      }
+
+      .card-title {
+        font-size: 1.3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-decoration bg-deco-1"></div>
+  <div class="bg-decoration bg-deco-2"></div>
+
+  <div class="container">
+    <header class="py-5 text-center">
+      <h1 class="title-main mb-2">🔐 Exclusión Mutua</h1>
+      <p class="subtitle fs-5 mb-2">Simulador Interactivo de Algoritmos Distribuidos</p>
+      <p class="tagline fs-6 px-3">
+        Explora cómo diferentes algoritmos resuelven el problema fundamental de la sincronización 
+        en sistemas distribuidos. Elige un algoritmo para ver la magia en acción.
+      </p>
+    </header>
+
+    <div class="row g-4 my-4">
+      <!-- Algoritmo Centralizado -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card algo-card centralizado h-100" style="--card-index: 0;">
+          <div class="card-number">1</div>
+          <div class="card-body card-content d-flex flex-column">
+            <div class="card-icon">🎵</div>
+            <h5 class="card-title">Club VIP</h5>
+            <p class="card-subtitle">Algoritmo Centralizado</p>
+            <p class="card-description flex-grow-1">
+              Un coordinador central actúa como "portero" del VIP. Todos los procesos piden permiso y 
+              esperan en una cola. Simple, eficiente, pero centralizado.
+            </p>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <span class="feature-tag">Simple</span>
+              <span class="feature-tag">Centralizado</span>
+              <span class="feature-tag">Clásico</span>
+            </div>
+            <button class="btn btn-launch" onclick="launchSimulation('simulacion_bootstrap.html')">
+              🚀 Ver Simulación
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Algoritmo Ricard-Agrawala -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card algo-card ricardAgrawala h-100" style="--card-index: 1;">
+          <div class="card-number">2</div>
+          <div class="card-body card-content d-flex flex-column">
+            <div class="card-icon">🤝</div>
+            <h5 class="card-title">Red de Amigos</h5>
+            <p class="card-subtitle">Ricard-Agrawala</p>
+            <p class="card-description flex-grow-1">
+              Cada proceso es independiente. Necesita permiso de TODOS sus compañeros para acceder. 
+              Distribuido, elegante, pero con más mensajes.
+            </p>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <span class="feature-tag">Distribuido</span>
+              <span class="feature-tag">Democrático</span>
+              <span class="feature-tag">Avanzado</span>
+            </div>
+            <button class="btn btn-launch" onclick="launchSimulation('simulacion_ricardagrawala_bootstrap.html')">
+              🚀 Ver Simulación
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Token Ring -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card algo-card tokenRing h-100" style="--card-index: 2;">
+          <div class="card-number">3</div>
+          <div class="card-body card-content d-flex flex-column">
+            <div class="card-icon">🎪</div>
+            <h5 class="card-title">Pase del Micrófono</h5>
+            <p class="card-subtitle">Token Ring</p>
+            <p class="card-description flex-grow-1">
+              Un token circula entre procesos en anillo. Solo quien tiene el token puede acceder al 
+              recurso. Justos todos, pero puede haber esperas.
+            </p>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <span class="feature-tag">Anillo</span>
+              <span class="feature-tag">Justo</span>
+              <span class="feature-tag">Físico</span>
+            </div>
+            <button class="btn btn-launch" onclick="launchSimulation('simulacion_tokenring_bootstrap.html')">
+              🚀 Ver Simulación
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-info py-5">
+      <p class="text-dark">💡 Selecciona un algoritmo para comenzar la simulación interactiva</p>
+      <p class="small text-muted mb-3">
+        Estos algoritmos resuelven el problema de exclusión mutua de diferentes formas. 
+        Cada uno tiene ventajas y desventajas en latencia, throughput y complejidad.
+      </p>
+      <div class="info-links d-flex gap-3 justify-content-center flex-wrap">
+        <a href="#" title="Más información">Documentación</a>
+        <a href="#" title="Comparativa">Análisis Comparativo</a>
+        <a href="#" title="Contacto">Contacto</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function launchSimulation(page) {
+      window.location.href = page;
+    }
+
+    document.querySelectorAll('.algo-card').forEach(card => {
+      card.addEventListener('click', function(e) {
+        if (e.target.tagName !== 'BUTTON') {
+          const button = this.querySelector('.btn-launch');
+          button.click();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

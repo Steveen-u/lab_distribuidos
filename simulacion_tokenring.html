@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pase del Micrófono — Token Ring</title>
+  <style>
+    :root {
+      --bg: #0d0d1f;
+      --surface: #14142b;
+      --border: rgba(255, 255, 255, 0.07);
+      --text: #e2e8f0;
+      --muted: #475569;
+      --p1: #4ade80;
+      --p2: #22c55e;
+      --p3: #16a34a;
+      --p4: #15803d;
+      --token: #fcd34d;
+      --active: #4ade80;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px 40px;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ────────────────────────────────────────────── */
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    header h1 {
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 14px;
+    }
+
+    .algo-info {
+      background: rgba(74, 222, 128, 0.05);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      margin-bottom: 20px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .msg-types {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      font-size: 0.75rem;
+      margin-top: 12px;
+    }
+
+    .msg-types span {
+      padding: 4px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+    }
+
+    .mt-token {
+      background: rgba(252, 211, 77, 0.15);
+      color: #fcd34d;
+      border: 1px solid rgba(252, 211, 77, 0.3);
+    }
+
+    .mt-hold {
+      background: rgba(74, 222, 128, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .mt-pass {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    /* ── Main grid ────────────────────────────────────────────── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Visualization Panel ────────────────────────────────────── */
+    .viz-panel {
+      background: linear-gradient(135deg, rgba(20, 20, 43, 0.6), rgba(30, 30, 60, 0.4));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-height: 500px;
+    }
+
+    .viz-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Ring visualization */
+    .ring-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(74, 222, 128, 0.05));
+      border-radius: 12px;
+      border: 2px solid rgba(74, 222, 128, 0.2);
+      min-height: 350px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes ring-glow {
+      0%, 100% { border-color: rgba(74, 222, 128, 0.2); box-shadow: 0 0 20px rgba(74, 222, 128, 0.1); }
+      50% { border-color: rgba(74, 222, 128, 0.4); box-shadow: 0 0 40px rgba(74, 222, 128, 0.2); }
+    }
+
+    .ring-container {
+      animation: ring-glow 4s ease-in-out infinite;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Process nodes info */
+    .processes-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 12px;
+    }
+
+    .process-badge {
+      background: linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(34, 197, 94, 0.05));
+      border: 2px solid rgba(74, 222, 128, 0.3);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      font-size: 0.85rem;
+      transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      cursor: default;
+      position: relative;
+    }
+
+    .process-badge.holding-token {
+      background: linear-gradient(135deg, rgba(252, 211, 77, 0.3), rgba(252, 211, 77, 0.1));
+      border-color: rgba(252, 211, 77, 0.8);
+      box-shadow: 0 0 30px rgba(252, 211, 77, 0.5), inset 0 0 15px rgba(252, 211, 77, 0.2);
+      font-weight: 700;
+      transform: scale(1.1);
+      animation: token-pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes token-pulse {
+      0%, 100% { box-shadow: 0 0 30px rgba(252, 211, 77, 0.5), inset 0 0 15px rgba(252, 211, 77, 0.2); }
+      50% { box-shadow: 0 0 50px rgba(252, 211, 77, 0.8), inset 0 0 25px rgba(252, 211, 77, 0.3); }
+    }
+
+    .process-badge.waiting {
+      background: linear-gradient(135deg, rgba(251, 146, 60, 0.2), rgba(251, 146, 60, 0.05));
+      border-color: rgba(251, 146, 60, 0.6);
+      box-shadow: 0 0 20px rgba(251, 146, 60, 0.3);
+      animation: waiting-pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes waiting-pulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(251, 146, 60, 0.3); }
+      50% { box-shadow: 0 0 35px rgba(251, 146, 60, 0.5); }
+    }
+
+    .process-badge.idle {
+      background: linear-gradient(135deg, rgba(107, 114, 128, 0.15), rgba(107, 114, 128, 0.05));
+      border-color: rgba(107, 114, 128, 0.3);
+    }
+
+    .process-name {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+    }
+
+    .process-status {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    /* ── Right Panel (Stats & Messages) ────────────────────────────────– */
+    .info-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .stats-box {
+      background: linear-gradient(135deg, rgba(20, 20, 43, 0.6), rgba(30, 30, 60, 0.4));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .stats-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: #e2e8f0;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-item:last-child {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    .stat-value {
+      font-weight: 700;
+      font-size: 1.3rem;
+      background: linear-gradient(135deg, #4ade80, #22c55e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Controls */
+    .controls {
+      background: linear-gradient(135deg, rgba(20, 20, 43, 0.6), rgba(30, 30, 60, 0.4));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #4ade80, #22c55e);
+      color: #0d0d1f;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(74, 222, 128, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(74, 222, 128, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(74, 222, 128, 0.25);
+      border-color: rgba(74, 222, 128, 0.6);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Speed control */
+    .speed-control {
+      background: linear-gradient(135deg, rgba(20, 20, 43, 0.6), rgba(30, 30, 60, 0.4));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .speed-label {
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .speed-slider {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(74, 222, 128, 0.2);
+      outline: none;
+      appearance: none;
+    }
+
+    .speed-slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4ade80, #22c55e);
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(74, 222, 128, 0.4);
+    }
+
+    .speed-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4ade80, #22c55e);
+      cursor: pointer;
+      border: none;
+    }
+
+    .speed-values {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
+    /* Messages log */
+    .messages-box {
+      background: linear-gradient(135deg, rgba(20, 20, 43, 0.6), rgba(30, 30, 60, 0.4));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .messages-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: #e2e8f0;
+    }
+
+    .message-item {
+      font-size: 0.85rem;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-left: 3px solid var(--muted);
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      animation: slideInRight 0.3s ease;
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .message-token {
+      border-left-color: var(--token);
+      color: #fcd34d;
+    }
+
+    .message-hold {
+      border-left-color: var(--active);
+      color: #4ade80;
+      font-weight: 600;
+    }
+
+    .message-pass {
+      border-left-color: #22c55e;
+      color: #22c55e;
+    }
+
+    /* Back button */
+    .back-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(74, 222, 128, 0.15);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      color: #4ade80;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .back-btn:hover {
+      background: rgba(74, 222, 128, 0.25);
+      border-color: rgba(74, 222, 128, 0.6);
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(74, 222, 128, 0.3);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(74, 222, 128, 0.5);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .pulsing {
+      animation: pulse 1s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <button class="back-btn" onclick="window.location.href='index.html'">← Volver</button>
+
+  <header>
+    <h1>🎪 Pase del Micrófono</h1>
+    <p>Algoritmo de Exclusión Mutua: Token Ring</p>
+    <div class="algo-info">
+      <strong>¿Cómo funciona?</strong> Un token especial circula entre procesos en forma de anillo. 
+      Solo quien tiene el token puede acceder al recurso. Es simple, justo y determinista.
+    </div>
+    <div class="msg-types">
+      <span class="mt-token">🎤 TOKEN: El micrófono</span>
+      <span class="mt-hold">✋ HOLD: Tengo el token</span>
+      <span class="mt-pass">➜ PASS: Paso a siguiente</span>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <!-- Left: Visualization -->
+    <div class="viz-panel">
+      <div class="viz-title">🔄 Anillo de Procesos</div>
+      <div class="ring-container">
+        <canvas id="ringCanvas"></canvas>
+      </div>
+      <div class="processes-info" id="processesInfo"></div>
+    </div>
+
+    <!-- Right: Statistics and Controls -->
+    <div class="info-panel">
+      <!-- Stats -->
+      <div class="stats-box">
+        <div class="stats-title">📊 Estadísticas</div>
+        <div class="stat-item">
+          <span class="stat-label">Token Pasajes</span>
+          <span class="stat-value" id="stat-passes">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Accesos CS</span>
+          <span class="stat-value" id="stat-cs">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Espera Promedio</span>
+          <span class="stat-value" id="stat-wait">0 ms</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Token Portador</span>
+          <span class="stat-value" id="stat-holder">P0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Siguiente Proceso</span>
+          <span class="stat-value" id="stat-next">P1</span>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button class="btn btn-primary" id="startBtn" onclick="startSimulation()">▶ Iniciar</button>
+        <button class="btn btn-secondary" id="pauseBtn" onclick="pauseSimulation()" disabled>⏸ Pausar</button>
+        <button class="btn btn-secondary" onclick="resetSimulation()">🔄 Reiniciar</button>
+      </div>
+
+      <!-- Speed -->
+      <div class="speed-control">
+        <div class="speed-label">⚡ Velocidad</div>
+        <input type="range" min="0.5" max="3" step="0.5" value="1" class="speed-slider" id="speedSlider" oninput="updateSpeed(this.value)">
+        <div class="speed-values">
+          <span>Lento</span>
+          <span id="speedValue">1x</span>
+          <span>Rápido</span>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="messages-box">
+        <div class="messages-title">💬 Actividad</div>
+        <div id="messagesLog"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════════════
+    // CONFIGURACIÓN Y ESTADO
+    // ═══════════════════════════════════════════════════════════════════
+    const NUM_PROCESSES = 4;
+    const CANVAS_ID = 'ringCanvas';
+    const PROCESS_RADIUS = 45;
+
+    let state = {
+      isRunning: false,
+      isPaused: false,
+      speed: 1,
+      processes: [],
+      tokenHolder: 0,
+      messages: [],
+      stats: {
+        passes: 0,
+        cs: 0,
+        waitTimes: [],
+        requestTimes: {}
+      }
+    };
+
+    // ═══════════════════════════════════════════════════════════════════
+    // CLASES Y ESTRUCTURAS
+    // ═══════════════════════════════════════════════════════════════════
+    class Process {
+      constructor(id, x, y) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.status = 'idle'; // idle, waiting, holding-token, in-cs
+        this.wants = false;
+        this.color = ['#4ade80', '#22c55e', '#16a34a', '#15803d'][id];
+        this.emoji = ['🧑', '👩', '🧔', '👨'][id];
+      }
+
+      reset() {
+        this.status = 'idle';
+        this.wants = false;
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // INICIALIZACIÓN
+    // ═══════════════════════════════════════════════════════════════════
+    function initSimulation() {
+      state.processes = [];
+      for (let i = 0; i < NUM_PROCESSES; i++) {
+        const angle = (i * 2 * Math.PI) / NUM_PROCESSES;
+        const canvas = document.getElementById(CANVAS_ID);
+        const cx = canvas.width / 2 + Math.cos(angle) * 130;
+        const cy = canvas.height / 2 + Math.sin(angle) * 130;
+        state.processes.push(new Process(i, cx, cy));
+      }
+      state.tokenHolder = 0;
+      state.processes[0].status = 'holding-token';
+      updateProcessesInfo();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // LÓGICA DEL ALGORITMO TOKEN RING
+    // ═══════════════════════════════════════════════════════════════════
+    function requestCS(proc) {
+      if (proc.wants) return;
+      proc.wants = true;
+      proc.status = 'waiting';
+      state.stats.requestTimes[proc.id] = Date.now();
+      addMessage(`🙋 P${proc.id}`, 'QUEUE', 'WAIT', 'Necesita el token');
+    }
+
+    function transferToken() {
+      const current = state.processes[state.tokenHolder];
+      current.status = current.wants ? 'in-cs' : 'idle';
+
+      if (current.wants) {
+        // Accede a la sección crítica
+        addMessage(`🎤 P${current.id}`, 'CS', 'HOLD', 'Tiene el token, entra a CS');
+        state.stats.cs++;
+
+        // Calcula tiempo de espera
+        if (state.stats.requestTimes[current.id]) {
+          const wait = Date.now() - state.stats.requestTimes[current.id];
+          state.stats.waitTimes.push(wait);
+        }
+
+        // Simula trabajo en CS
+        setTimeout(() => {
+          current.wants = false;
+          passTokenToNext();
+        }, 800 / state.speed);
+      } else {
+        // No lo necesita, pasa al siguiente
+        passTokenToNext();
+      }
+    }
+
+    function passTokenToNext() {
+      const current = state.processes[state.tokenHolder];
+      const next = (state.tokenHolder + 1) % NUM_PROCESSES;
+
+      current.status = current.wants ? 'in-cs' : 'idle';
+      state.processes[next].status = 'holding-token';
+
+      addMessage(`🎤 P${state.tokenHolder}`, `P${next}`, 'PASS', 'Pasa el micrófono');
+      state.stats.passes++;
+
+      state.tokenHolder = next;
+
+      // Continua la simulación
+      if (state.isRunning && !state.isPaused) {
+        setTimeout(() => {
+          transferToken();
+        }, 400 / state.speed);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // VISUALIZACIÓN
+    // ═══════════════════════════════════════════════════════════════════
+    function drawRing() {
+      const canvas = document.getElementById(CANVAS_ID);
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+
+      // Fondo
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Dibujar anillo (línea)
+      ctx.strokeStyle = 'rgba(74, 222, 128, 0.15)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      state.processes.forEach((proc, i) => {
+        if (i === 0) ctx.moveTo(proc.x, proc.y);
+        else ctx.lineTo(proc.x, proc.y);
+      });
+      ctx.closePath();
+      ctx.stroke();
+
+      // Flechas de dirección del anillo
+      ctx.strokeStyle = 'rgba(74, 222, 128, 0.2)';
+      ctx.fillStyle = 'rgba(74, 222, 128, 0.2)';
+      for (let i = 0; i < state.processes.length; i++) {
+        const from = state.processes[i];
+        const to = state.processes[(i + 1) % state.processes.length];
+
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const unitX = dx / distance;
+        const unitY = dy / distance;
+
+        const arrowX = from.x + unitX * (distance * 0.7);
+        const arrowY = from.y + unitY * (distance * 0.7);
+
+        ctx.beginPath();
+        ctx.moveTo(arrowX, arrowY);
+        ctx.lineTo(arrowX - unitX * 15 - unitY * 8, arrowY - unitY * 15 + unitX * 8);
+        ctx.lineTo(arrowX - unitX * 15 + unitY * 8, arrowY - unitY * 15 - unitX * 8);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Dibujar procesos
+      state.processes.forEach((proc) => {
+        // Círculo
+        ctx.beginPath();
+        ctx.arc(proc.x, proc.y, PROCESS_RADIUS, 0, Math.PI * 2);
+
+        if (proc.status === 'holding-token') {
+          ctx.fillStyle = 'rgba(252, 211, 77, 0.4)';
+          ctx.fill();
+          ctx.shadowColor = '#fcd34d';
+          ctx.shadowBlur = 30;
+
+          // Glow más grande para el token
+          ctx.beginPath();
+          ctx.arc(proc.x, proc.y, PROCESS_RADIUS + 15, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(252, 211, 77, 0.3)';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        } else if (proc.status === 'in-cs') {
+          ctx.fillStyle = 'rgba(74, 222, 128, 0.3)';
+          ctx.fill();
+          ctx.shadowColor = '#4ade80';
+          ctx.shadowBlur = 20;
+        } else if (proc.status === 'waiting') {
+          ctx.fillStyle = 'rgba(251, 146, 60, 0.2)';
+          ctx.fill();
+          ctx.shadowColor = '#fb923c';
+          ctx.shadowBlur = 15;
+        } else {
+          ctx.fillStyle = 'rgba(107, 114, 128, 0.2)';
+          ctx.fill();
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+        }
+
+        ctx.strokeStyle = proc.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Emoji
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = 'bold 22px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(proc.emoji, proc.x, proc.y - 10);
+
+        // ID
+        ctx.font = '13px Arial';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(`P${proc.id}`, proc.x, proc.y + 18);
+
+        // Status
+        if (proc.status === 'holding-token') {
+          ctx.font = 'bold 10px Arial';
+          ctx.fillStyle = '#fcd34d';
+          ctx.fillText('🎤', proc.x, proc.y + 32);
+        } else if (proc.status === 'waiting') {
+          ctx.font = 'bold 10px Arial';
+          ctx.fillStyle = '#fb923c';
+          ctx.fillText('⏳', proc.x, proc.y + 32);
+        }
+      });
+
+      ctx.shadowColor = 'transparent';
+      requestAnimationFrame(drawRing);
+    }
+
+    function updateProcessesInfo() {
+      const container = document.getElementById('processesInfo');
+      container.innerHTML = state.processes
+        .map(
+          (proc) => `
+        <div class="process-badge ${proc.status === 'holding-token' ? 'holding-token' : proc.status === 'waiting' ? 'waiting' : 'idle'}">
+          <div class="process-name">${proc.emoji} P${proc.id}</div>
+          <div class="process-status">${proc.status}</div>
+        </div>
+      `
+        )
+        .join('');
+    }
+
+    function addMessage(from, to, type, detail) {
+      const msg = { from, to, type, detail };
+      state.messages.unshift(msg);
+
+      if (state.messages.length > 20) state.messages.pop();
+
+      updateMessagesLog();
+    }
+
+    function updateMessagesLog() {
+      const log = document.getElementById('messagesLog');
+      log.innerHTML = state.messages
+        .map(
+          (msg) => `
+        <div class="message-item message-${msg.type.toLowerCase()}">
+          <strong>${msg.from} → ${msg.to}</strong> [${msg.type}] ${msg.detail}
+        </div>
+      `
+        )
+        .join('');
+      log.scrollTop = 0;
+    }
+
+    function updateStats() {
+      document.getElementById('stat-passes').textContent = state.stats.passes;
+      document.getElementById('stat-cs').textContent = state.stats.cs;
+
+      const avgWait =
+        state.stats.waitTimes.length > 0
+          ? Math.round(state.stats.waitTimes.reduce((a, b) => a + b, 0) / state.stats.waitTimes.length)
+          : 0;
+      document.getElementById('stat-wait').textContent = avgWait + ' ms';
+
+      document.getElementById('stat-holder').textContent = `P${state.tokenHolder}`;
+      document.getElementById('stat-next').textContent = `P${(state.tokenHolder + 1) % NUM_PROCESSES}`;
+
+      updateProcessesInfo();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // CONTROLES
+    // ═══════════════════════════════════════════════════════════════════
+    function startSimulation() {
+      if (!state.isRunning) {
+        state.isRunning = true;
+        state.isPaused = false;
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('pauseBtn').disabled = false;
+
+        // Algunos procesos quieren acceder
+        state.processes.forEach((proc, idx) => {
+          setTimeout(
+            () => {
+              if (state.isRunning && !state.isPaused) {
+                requestCS(proc);
+              }
+            },
+            200 * (idx + 1)
+          );
+        });
+
+        // Inicia el pasaje de token
+        setTimeout(() => {
+          transferToken();
+        }, 500);
+      }
+    }
+
+    function pauseSimulation() {
+      state.isPaused = !state.isPaused;
+      document.getElementById('pauseBtn').textContent = state.isPaused ? '▶ Reanudar' : '⏸ Pausar';
+    }
+
+    function resetSimulation() {
+      state.isRunning = false;
+      state.isPaused = false;
+      state.tokenHolder = 0;
+      state.processes.forEach((proc) => proc.reset());
+      state.messages = [];
+      state.stats = { passes: 0, cs: 0, waitTimes: [], requestTimes: {} };
+      state.processes[0].status = 'holding-token';
+
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('pauseBtn').disabled = true;
+      document.getElementById('pauseBtn').textContent = '⏸ Pausar';
+
+      updateStats();
+      updateMessagesLog();
+    }
+
+    function updateSpeed(value) {
+      state.speed = parseFloat(value);
+      document.getElementById('speedValue').textContent = value + 'x';
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ANIMACIÓN PRINCIPAL
+    // ═══════════════════════════════════════════════════════════════════
+    setInterval(() => {
+      if (state.isRunning && !state.isPaused) {
+        updateStats();
+      }
+    }, 500);
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', () => {
+      initSimulation();
+      drawRing();
+      updateStats();
+      updateMessagesLog();
+    });
+  </script>
+</body>
+</html>

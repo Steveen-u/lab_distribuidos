@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Red de Amigos — Ricard-Agrawala</title>
+  <style>
+    :root {
+      --bg: #0d0d1f;
+      --surface: #14142b;
+      --border: rgba(255, 255, 255, 0.07);
+      --text: #e2e8f0;
+      --muted: #475569;
+      --p1: #e879f9;
+      --p2: #d946ef;
+      --p3: #c026d3;
+      --p4: #a21caf;
+      --req: #fbbf24;
+      --ack: #4ade80;
+      --rel: #f87171;
+      --active: #e879f9;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px 40px;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ────────────────────────────────────────────── */
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    header h1 {
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      background: linear-gradient(135deg, #e879f9 0%, #d946ef 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 14px;
+    }
+
+    .algo-info {
+      background: rgba(232, 121, 249, 0.05);
+      border: 1px solid rgba(232, 121, 249, 0.2);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      margin-bottom: 20px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .msg-types {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      font-size: 0.75rem;
+      margin-top: 12px;
+    }
+
+    .msg-types span {
+      padding: 4px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+    }
+
+    .mt-req {
+      background: rgba(251, 191, 36, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .mt-ack {
+      background: rgba(74, 222, 128, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .mt-rel {
+      background: rgba(248, 113, 113, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+
+    /* ── Main grid ────────────────────────────────────────────── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Visualization Panel ────────────────────────────────────── */
+    .viz-panel {
+      background: linear-gradient(135deg, rgba(20, 20, 43, 0.6), rgba(30, 30, 60, 0.4));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-height: 500px;
+    }
+
+    .viz-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Network visualization */
+    .network-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(232, 121, 249, 0.05));
+      border-radius: 12px;
+      border: 2px solid rgba(232, 121, 249, 0.2);
+      min-height: 300px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes network-glow {
+      0%, 100% { border-color: rgba(232, 121, 249, 0.2); box-shadow: 0 0 20px rgba(232, 121, 249, 0.1); }
+      50% { border-color: rgba(232, 121, 249, 0.4); box-shadow: 0 0 40px rgba(232, 121, 249, 0.2); }
+    }
+
+    .network-container {
+      animation: network-glow 4s ease-in-out infinite;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Process nodes info */
+    .processes-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 12px;
+    }
+
+    .process-badge {
+      background: linear-gradient(135deg, rgba(232, 121, 249, 0.1), rgba(217, 70, 239, 0.05));
+      border: 2px solid rgba(232, 121, 249, 0.3);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      font-size: 0.85rem;
+      transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      cursor: default;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .process-badge::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+      opacity: 0;
+    }
+
+    .process-badge.requesting {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.05));
+      border-color: rgba(251, 191, 36, 0.6);
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+      animation: pulse-badge 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse-badge {
+      0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.3); transform: scale(1); }
+      50% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.5); transform: scale(1.05); }
+    }
+
+    .process-badge.in-cs {
+      background: linear-gradient(135deg, rgba(232, 121, 249, 0.3), rgba(217, 70, 239, 0.2));
+      border-color: rgba(232, 121, 249, 0.8);
+      box-shadow: 0 0 30px rgba(232, 121, 249, 0.5);
+      font-weight: 700;
+      transform: scale(1.08);
+    }
+
+    .process-badge.idle {
+      background: linear-gradient(135deg, rgba(107, 114, 128, 0.15), rgba(107, 114, 128, 0.05));
+      border-color: rgba(107, 114, 128, 0.3);
+    }
+
+    .process-name {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+    }
+
+    .process-status {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    /* ── Right Panel (Stats & Messages) ────────────────────────────────── */
+    .info-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .stats-box {
+      background: linear-gradient(135deg, rgba(20, 20, 43, 0.6), rgba(30, 30, 60, 0.4));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .stats-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: #e2e8f0;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-item:last-child {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    .stat-value {
+      font-weight: 700;
+      font-size: 1.3rem;
+      background: linear-gradient(135deg, #e879f9, #d946ef);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Controls */
+    .controls {
+      background: linear-gradient(135deg, rgba(20, 20, 43, 0.6), rgba(30, 30, 60, 0.4));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #e879f9, #d946ef);
+      color: #0d0d1f;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(232, 121, 249, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(232, 121, 249, 0.15);
+      color: #e879f9;
+      border: 1px solid rgba(232, 121, 249, 0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(232, 121, 249, 0.25);
+      border-color: rgba(232, 121, 249, 0.6);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Speed control */
+    .speed-control {
+      background: linear-gradient(135deg, rgba(20, 20, 43, 0.6), rgba(30, 30, 60, 0.4));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .speed-label {
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .speed-slider {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(232, 121, 249, 0.2);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .speed-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e879f9, #d946ef);
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(232, 121, 249, 0.4);
+    }
+
+    .speed-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e879f9, #d946ef);
+      cursor: pointer;
+      border: none;
+    }
+
+    .speed-values {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
+    /* Messages log */
+    .messages-box {
+      background: linear-gradient(135deg, rgba(20, 20, 43, 0.6), rgba(30, 30, 60, 0.4));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .messages-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: #e2e8f0;
+    }
+
+    .message-item {
+      font-size: 0.85rem;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-left: 3px solid var(--muted);
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      animation: slideInRight 0.3s ease;
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .message-request {
+      border-left-color: var(--req);
+      color: #fbbf24;
+    }
+
+    .message-ack {
+      border-left-color: var(--ack);
+      color: #4ade80;
+    }
+
+    .message-release {
+      border-left-color: var(--rel);
+      color: #f87171;
+    }
+
+    .message-cs {
+      border-left-color: var(--active);
+      color: #e879f9;
+      font-weight: 600;
+    }
+
+    /* Back button */
+    .back-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(232, 121, 249, 0.15);
+      border: 1px solid rgba(232, 121, 249, 0.3);
+      color: #e879f9;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .back-btn:hover {
+      background: rgba(232, 121, 249, 0.25);
+      border-color: rgba(232, 121, 249, 0.6);
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(232, 121, 249, 0.3);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(232, 121, 249, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <button class="back-btn" onclick="window.location.href='index.html'">← Volver</button>
+
+  <header>
+    <h1>🤝 Red de Amigos</h1>
+    <p>Algoritmo de Exclusión Mutua: Ricard-Agrawala</p>
+    <div class="algo-info">
+      <strong>¿Cómo funciona?</strong> Cada proceso es independiente. Cuando quiere acceder al recurso, 
+      pide permiso a TODOS sus compañeros. Solo entra cuando recibe OK de todos.
+    </div>
+    <div class="msg-types">
+      <span class="mt-req">📤 REQUEST: Solicitud</span>
+      <span class="mt-ack">✓ ACK: Permiso</span>
+      <span class="mt-rel">📭 RELEASE: Liberación</span>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <!-- Left: Visualization -->
+    <div class="viz-panel">
+      <div class="viz-title">🌐 Red de Procesos</div>
+      <div class="network-container">
+        <canvas id="networkCanvas"></canvas>
+      </div>
+      <div class="processes-info" id="processesInfo"></div>
+    </div>
+
+    <!-- Right: Statistics and Controls -->
+    <div class="info-panel">
+      <!-- Stats -->
+      <div class="stats-box">
+        <div class="stats-title">📊 Estadísticas</div>
+        <div class="stat-item">
+          <span class="stat-label">Solicitudes Enviadas</span>
+          <span class="stat-value" id="stat-requests">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Permisos Otorgados</span>
+          <span class="stat-value" id="stat-acks">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Accesos CS</span>
+          <span class="stat-value" id="stat-cs">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Mensajes Totales</span>
+          <span class="stat-value" id="stat-messages">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Tiempo Promedio</span>
+          <span class="stat-value" id="stat-time">0 ms</span>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button class="btn btn-primary" id="startBtn" onclick="startSimulation()">▶ Iniciar</button>
+        <button class="btn btn-secondary" id="pauseBtn" onclick="pauseSimulation()" disabled>⏸ Pausar</button>
+        <button class="btn btn-secondary" onclick="resetSimulation()">🔄 Reiniciar</button>
+      </div>
+
+      <!-- Speed -->
+      <div class="speed-control">
+        <div class="speed-label">⚡ Velocidad</div>
+        <input type="range" min="0.5" max="3" step="0.5" value="1" class="speed-slider" id="speedSlider" oninput="updateSpeed(this.value)">
+        <div class="speed-values">
+          <span>Lento</span>
+          <span id="speedValue">1x</span>
+          <span>Rápido</span>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="messages-box">
+        <div class="messages-title">💬 Actividad</div>
+        <div id="messagesLog"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════════════
+    // CONFIGURACIÓN Y ESTADO
+    // ═══════════════════════════════════════════════════════════════════
+    const NUM_PROCESSES = 4;
+    const CANVAS_ID = 'networkCanvas';
+    const PROCESS_RADIUS = 40;
+
+    let state = {
+      isRunning: false,
+      isPaused: false,
+      speed: 1,
+      processes: [],
+      messages: [],
+      stats: {
+        requests: 0,
+        acks: 0,
+        cs: 0,
+        messages: 0,
+        totalTime: 0,
+        count: 0
+      }
+    };
+
+    // ═══════════════════════════════════════════════════════════════════
+    // CLASES Y ESTRUCTURAS
+    // ═══════════════════════════════════════════════════════════════════
+    class Process {
+      constructor(id, x, y) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.status = 'idle'; // idle, requesting, acked, in-cs
+        this.timestamp = 0;
+        this.requestTimestamp = 0;
+        this.ackedBy = new Set();
+        this.deferredRequests = [];
+        this.color = ['#e879f9', '#d946ef', '#c026d3', '#a21caf'][id];
+        this.emoji = ['🧑', '👩', '🧔', '👨'][id];
+      }
+
+      reset() {
+        this.status = 'idle';
+        this.timestamp = 0;
+        this.requestTimestamp = 0;
+        this.ackedBy.clear();
+        this.deferredRequests = [];
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // INICIALIZACIÓN
+    // ═══════════════════════════════════════════════════════════════════
+    function initSimulation() {
+      state.processes = [];
+      for (let i = 0; i < NUM_PROCESSES; i++) {
+        const angle = (i * 2 * Math.PI) / NUM_PROCESSES;
+        const canvas = document.getElementById(CANVAS_ID);
+        const cx = canvas.width / 2 + Math.cos(angle) * 120;
+        const cy = canvas.height / 2 + Math.sin(angle) * 120;
+        state.processes.push(new Process(i, cx, cy));
+      }
+      updateProcessesInfo();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // LÓGICA DEL ALGORITMO RICARD-AGRAWALA
+    // ═══════════════════════════════════════════════════════════════════
+    function getOtherProcesses(proc) {
+      return state.processes.filter((p) => p.id !== proc.id);
+    }
+
+    function requestCriticalSection(proc) {
+      proc.status = 'requesting';
+      proc.requestTimestamp = Date.now();
+      proc.timestamp++;
+      proc.ackedBy.clear();
+
+      addMessage(`${proc.emoji} P${proc.id}`, 'ALL', 'REQUEST', `Solicita acceso (ts: ${proc.timestamp})`);
+      state.stats.requests++;
+
+      // Enviar REQUEST a todos
+      getOtherProcesses(proc).forEach((other) => {
+        handleRequest(other, proc);
+      });
+    }
+
+    function handleRequest(receiver, sender) {
+      state.stats.messages++;
+
+      // Si el receptor no está en CS y no está esperando, otorga permiso
+      if (receiver.status === 'idle' || receiver.timestamp < sender.timestamp) {
+        sendAck(receiver, sender);
+      } else {
+        // Diferir el ACK
+        receiver.deferredRequests.push(sender);
+      }
+    }
+
+    function sendAck(from, to) {
+      addMessage(`${from.emoji} P${from.id}`, `${to.emoji} P${to.id}`, 'ACK', 'Otorga permiso');
+      state.stats.messages++;
+
+      // El remitente recibe el ACK
+      if (to.status === 'requesting') {
+        to.ackedBy.add(from.id);
+
+        // Si recibió de todos, entra a la sección crítica
+        if (to.ackedBy.size === NUM_PROCESSES - 1) {
+          enterCriticalSection(to);
+        }
+      }
+    }
+
+    function enterCriticalSection(proc) {
+      proc.status = 'in-cs';
+      addMessage(`✨ P${proc.id}`, 'CS', 'ENTER', 'Entra a la sección crítica');
+      state.stats.cs++;
+
+      // Simular trabajo en la sección crítica
+      setTimeout(() => {
+        exitCriticalSection(proc);
+      }, 1000 / state.speed);
+    }
+
+    function exitCriticalSection(proc) {
+      proc.status = 'idle';
+      proc.timestamp++;
+
+      addMessage(`🔓 P${proc.id}`, 'ALL', 'RELEASE', 'Libera la sección crítica');
+
+      // Enviar ACKs diferidos
+      const deferred = proc.deferredRequests;
+      proc.deferredRequests = [];
+
+      deferred.forEach((other) => {
+        sendAck(proc, other);
+      });
+
+      // Calcula tiempo promedio
+      if (proc.requestTimestamp > 0) {
+        const elapsed = Date.now() - proc.requestTimestamp;
+        state.stats.totalTime += elapsed;
+        state.stats.count++;
+      }
+
+      // Reiniciar si sigue corriendo
+      if (state.isRunning && !state.isPaused) {
+        setTimeout(() => {
+          requestCriticalSection(proc);
+        }, (500 * Math.random()) / state.speed);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // VISUALIZACIÓN
+    // ═══════════════════════════════════════════════════════════════════
+    function drawNetwork() {
+      const canvas = document.getElementById(CANVAS_ID);
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+
+      // Fondo
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Dibujar conexiones
+      ctx.strokeStyle = 'rgba(232, 121, 249, 0.2)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < state.processes.length; i++) {
+        const p1 = state.processes[i];
+        const p2 = state.processes[(i + 1) % state.processes.length];
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+
+      // Dibujar procesos
+      state.processes.forEach((proc) => {
+        // Círculo
+        ctx.beginPath();
+        ctx.arc(proc.x, proc.y, PROCESS_RADIUS, 0, Math.PI * 2);
+
+        if (proc.status === 'in-cs') {
+          ctx.fillStyle = proc.color;
+          ctx.fill();
+          ctx.shadowColor = proc.color;
+          ctx.shadowBlur = 20;
+        } else if (proc.status === 'requesting') {
+          ctx.fillStyle = 'rgba(251, 191, 36, 0.3)';
+          ctx.fill();
+          ctx.shadowColor = '#fbbf24';
+          ctx.shadowBlur = 15;
+        } else {
+          ctx.fillStyle = 'rgba(107, 114, 128, 0.3)';
+          ctx.fill();
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+        }
+
+        ctx.strokeStyle = proc.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Emoji y ID
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(proc.emoji, proc.x, proc.y - 10);
+        ctx.font = '12px Arial';
+        ctx.fillText(`P${proc.id}`, proc.x, proc.y + 15);
+
+        // Estado
+        ctx.font = 'bold 10px Arial';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(proc.status.toUpperCase(), proc.x, proc.y + 30);
+      });
+
+      ctx.shadowColor = 'transparent';
+      requestAnimationFrame(drawNetwork);
+    }
+
+    function updateProcessesInfo() {
+      const container = document.getElementById('processesInfo');
+      container.innerHTML = state.processes
+        .map(
+          (proc) => `
+        <div class="process-badge ${proc.status}">
+          <div class="process-name">${proc.emoji} P${proc.id}</div>
+          <div class="process-status">${proc.status}</div>
+        </div>
+      `
+        )
+        .join('');
+    }
+
+    function addMessage(from, to, type, detail) {
+      const msg = { from, to, type, detail, time: new Date().toLocaleTimeString() };
+      state.messages.unshift(msg);
+
+      if (state.messages.length > 20) state.messages.pop();
+
+      updateMessagesLog();
+    }
+
+    function updateMessagesLog() {
+      const log = document.getElementById('messagesLog');
+      log.innerHTML = state.messages
+        .map(
+          (msg) => `
+        <div class="message-item message-${msg.type.toLowerCase()}">
+          <strong>${msg.from} → ${msg.to}</strong> [${msg.type}] ${msg.detail}
+        </div>
+      `
+        )
+        .join('');
+      log.scrollTop = 0;
+    }
+
+    function updateStats() {
+      document.getElementById('stat-requests').textContent = state.stats.requests;
+      document.getElementById('stat-acks').textContent = state.stats.acks;
+      document.getElementById('stat-cs').textContent = state.stats.cs;
+      document.getElementById('stat-messages').textContent = state.stats.messages;
+
+      const avgTime = state.stats.count > 0 ? Math.round(state.stats.totalTime / state.stats.count) : 0;
+      document.getElementById('stat-time').textContent = avgTime + ' ms';
+
+      updateProcessesInfo();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // CONTROLES
+    // ═══════════════════════════════════════════════════════════════════
+    function startSimulation() {
+      if (!state.isRunning) {
+        state.isRunning = true;
+        state.isPaused = false;
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('pauseBtn').disabled = false;
+
+        state.processes.forEach((proc, index) => {
+          setTimeout(() => {
+            requestCriticalSection(proc);
+          }, 300 * index);
+        });
+      }
+    }
+
+    function pauseSimulation() {
+      state.isPaused = !state.isPaused;
+      document.getElementById('pauseBtn').textContent = state.isPaused ? '▶ Reanudar' : '⏸ Pausar';
+    }
+
+    function resetSimulation() {
+      state.isRunning = false;
+      state.isPaused = false;
+      state.processes.forEach((proc) => proc.reset());
+      state.messages = [];
+      state.stats = { requests: 0, acks: 0, cs: 0, messages: 0, totalTime: 0, count: 0 };
+
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('pauseBtn').disabled = true;
+      document.getElementById('pauseBtn').textContent = '⏸ Pausar';
+
+      updateStats();
+      updateMessagesLog();
+    }
+
+    function updateSpeed(value) {
+      state.speed = parseFloat(value);
+      document.getElementById('speedValue').textContent = value + 'x';
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ANIMACIÓN PRINCIPAL
+    // ═══════════════════════════════════════════════════════════════════
+    setInterval(() => {
+      if (state.isRunning && !state.isPaused) {
+        updateStats();
+      }
+    }, 500);
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', () => {
+      initSimulation();
+      drawNetwork();
+      updateStats();
+      updateMessagesLog();
+    });
+  </script>
+</body>
+</html>

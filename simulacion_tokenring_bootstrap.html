@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pase del Micrófono — Token Ring</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #22c55e;
+      --bg: linear-gradient(135deg, #fafafa 0%, #f5f1ff 50%, #f0fdf4 100%);
+    }
+
+    body {
+      background: var(--bg);
+      color: #1f2937;
+    }
+
+    header h1 {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .btn-back {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: #22c55e;
+      z-index: 100;
+    }
+
+    .btn-back:hover {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .card {
+      background: linear-gradient(135deg, #ffffff 0%, #f9f5ff 100%) !important;
+      border: 1px solid rgba(139, 92, 246, 0.2) !important;
+      color: #1f2937;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-header {
+      background: rgba(139, 92, 246, 0.08) !important;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.15) !important;
+    }
+
+    .card-header small {
+      color: #22c55e !important;
+    }
+
+    .ring-container {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(34, 197, 94, 0.05));
+      border: 2px solid rgba(34, 197, 94, 0.2);
+      border-radius: 12px;
+      width: 100%;
+      height: 400px;
+      min-height: 400px;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      animation: ring-glow 4s ease-in-out infinite;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .ring-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+      max-width: 100%;
+    }
+
+    @keyframes ring-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.1); }
+      50% { box-shadow: 0 0 40px rgba(34, 197, 94, 0.2); }
+    }
+
+    .process-badge {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.05));
+      border: 2px solid rgba(34, 197, 94, 0.3);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      font-size: 0.85rem;
+      transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      color: #1f2937;
+    }
+
+    .process-badge.holding-token {
+      background: linear-gradient(135deg, rgba(217, 119, 6, 0.2), rgba(217, 119, 6, 0.1));
+      border-color: rgba(217, 119, 6, 0.8);
+      box-shadow: 0 0 30px rgba(217, 119, 6, 0.5), inset 0 0 15px rgba(217, 119, 6, 0.2);
+      font-weight: 700;
+      transform: scale(1.1);
+      animation: token-pulse 1.2s ease-in-out infinite;
+      color: #92400e;
+    }
+
+    @keyframes token-pulse {
+      0%, 100% { box-shadow: 0 0 30px rgba(217, 119, 6, 0.5), inset 0 0 15px rgba(217, 119, 6, 0.2); }
+      50% { box-shadow: 0 0 50px rgba(217, 119, 6, 0.8), inset 0 0 25px rgba(217, 119, 6, 0.3); }
+    }
+
+    .process-badge.waiting {
+      background: linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(251, 146, 60, 0.05));
+      border-color: rgba(251, 146, 60, 0.6);
+      box-shadow: 0 0 20px rgba(251, 146, 60, 0.3);
+      animation: waiting-pulse 1s ease-in-out infinite;
+      color: #92400e;
+    }
+
+    @keyframes waiting-pulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(251, 146, 60, 0.3); }
+      50% { box-shadow: 0 0 35px rgba(251, 146, 60, 0.5); }
+    }
+
+    .btn-launch {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      border: none;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .btn-launch:hover {
+      box-shadow: 0 10px 30px rgba(34, 197, 94, 0.4);
+      transform: translateY(-2px);
+      color: #ffffff;
+    }
+
+    .stat-value {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+      font-size: 1.5rem;
+    }
+
+    .message-item {
+      font-size: 0.85rem;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-left: 3px solid #22c55e;
+      background: rgba(34, 197, 94, 0.08);
+      border-radius: 4px;
+      animation: slideInRight 0.3s ease;
+      color: #1f2937;
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .message-token { border-left-color: #d97706; color: #92400e; background: rgba(217, 119, 6, 0.1); }
+    .message-hold { border-left-color: #22c55e; color: #15803d; background: rgba(34, 197, 94, 0.1); font-weight: 600; }
+    .message-pass { border-left-color: #16a34a; color: #166534; background: rgba(22, 163, 74, 0.1); }
+  </style>
+</head>
+<body>
+  <a href="index_bootstrap.html" class="btn btn-back btn-sm">← Volver</a>
+
+  <div class="container py-4">
+    <header class="text-center mb-4">
+      <h1 class="mb-2">🎪 Pase del Micrófono</h1>
+      <p class="text-muted mb-3">Algoritmo Token Ring para exclusión mutua</p>
+      <p class="small text-muted">Un token circula entre procesos. Solo quien lo tiene puede acceder al recurso.</p>
+    </header>
+
+    <div class="row g-3 mb-4">
+      <!-- Visualización -->
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header bg-dark">
+            <small class="text-muted text-uppercase">🔄 Anillo de Procesos</small>
+          </div>
+          <div class="card-body p-0">
+            <div class="ring-container">
+              <canvas id="ringCanvas"></canvas>
+            </div>
+            <div class="row g-2 p-3" id="processesInfo"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Panel -->
+      <div class="col-lg-4">
+        <!-- Stats -->
+        <div class="card mb-3">
+          <div class="card-header bg-dark">
+            <small class="text-muted text-uppercase">📊 Estadísticas</small>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-6">
+                <small class="text-muted">Pasajes</small>
+                <div class="stat-value" id="stat-passes">0</div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">Accesos CS</small>
+                <div class="stat-value" id="stat-cs">0</div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">Espera</small>
+                <div class="stat-value" id="stat-wait">0 ms</div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">Token</small>
+                <div class="stat-value" id="stat-holder">P0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="card">
+          <div class="card-header bg-dark">
+            <small class="text-muted text-uppercase">🎮 Controles</small>
+          </div>
+          <div class="card-body">
+            <div class="d-flex gap-2 flex-wrap mb-3">
+              <button class="btn btn-launch btn-sm" id="startBtn" onclick="startSimulation()">▶ Iniciar</button>
+              <button class="btn btn-secondary btn-sm" id="pauseBtn" onclick="pauseSimulation()" disabled>⏸ Pausar</button>
+              <button class="btn btn-secondary btn-sm" onclick="resetSimulation()">🔄 Reiniciar</button>
+            </div>
+            
+            <label class="form-label small mb-2">⚡ Velocidad</label>
+            <input type="range" class="form-range" min="0.5" max="3" step="0.5" value="1" id="speedSlider" oninput="updateSpeed(this.value)">
+            <small class="text-muted d-block text-center mt-2">
+              <span id="speedValue">1x</span>
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensajes -->
+    <div class="card">
+      <div class="card-header bg-dark">
+        <small class="text-muted text-uppercase">💬 Actividad</small>
+      </div>
+      <div class="card-body" id="messagesLog" style="max-height: 250px; overflow-y: auto; font-family: monospace; font-size: 0.85rem;"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const NUM_PROCESSES = 4;
+    const CANVAS_ID = 'ringCanvas';
+    const PROCESS_RADIUS = 45;
+
+    let state = {
+      isRunning: false,
+      isPaused: false,
+      speed: 1,
+      processes: [],
+      tokenHolder: 0,
+      messages: [],
+      stats: {
+        passes: 0,
+        cs: 0,
+        waitTimes: [],
+        requestTimes: {}
+      }
+    };
+
+    class Process {
+      constructor(id, x, y) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.status = 'idle';
+        this.wants = false;
+        this.color = ['#22c55e', '#16a34a', '#15803d', '#166534'][id];
+        this.emoji = ['🧑', '👩', '🧔', '👨'][id];
+      }
+
+      reset() {
+        this.status = 'idle';
+        this.wants = false;
+      }
+    }
+
+    function initSimulation() {
+      state.processes = [];
+      const canvas = document.getElementById(CANVAS_ID);
+      const parent = canvas.parentElement;
+      
+      const width = parent.clientWidth - 40;
+      const height = parent.clientHeight - 40;
+      const radius = Math.min(width, height) * 0.32;
+      const cx = width / 2;
+      const cy = height / 2;
+      
+      for (let i = 0; i < NUM_PROCESSES; i++) {
+        const angle = (i * 2 * Math.PI) / NUM_PROCESSES;
+        const x = cx + Math.cos(angle) * radius;
+        const y = cy + Math.sin(angle) * radius;
+        state.processes.push(new Process(i, x, y));
+      }
+      state.tokenHolder = 0;
+      state.processes[0].status = 'holding-token';
+      updateProcessesInfo();
+    }
+
+    function requestCS(proc) {
+      if (proc.wants) return;
+      proc.wants = true;
+      proc.status = 'waiting';
+      state.stats.requestTimes[proc.id] = Date.now();
+      addMessage(`🙋 P${proc.id}`, 'QUEUE', 'WAIT', 'Necesita el token');
+    }
+
+    function transferToken() {
+      const current = state.processes[state.tokenHolder];
+      current.status = current.wants ? 'in-cs' : 'idle';
+
+      if (current.wants) {
+        addMessage(`🎤 P${current.id}`, 'CS', 'HOLD', 'Tiene el token, entra a CS');
+        state.stats.cs++;
+
+        if (state.stats.requestTimes[current.id]) {
+          const wait = Date.now() - state.stats.requestTimes[current.id];
+          state.stats.waitTimes.push(wait);
+        }
+
+        setTimeout(() => {
+          current.wants = false;
+          passTokenToNext();
+        }, 800 / state.speed);
+      } else {
+        passTokenToNext();
+      }
+    }
+
+    function passTokenToNext() {
+      const current = state.processes[state.tokenHolder];
+      const next = (state.tokenHolder + 1) % NUM_PROCESSES;
+
+      current.status = current.wants ? 'in-cs' : 'idle';
+      state.processes[next].status = 'holding-token';
+
+      addMessage(`🎤 P${state.tokenHolder}`, `P${next}`, 'PASS', 'Pasa el micrófono');
+      state.stats.passes++;
+
+      state.tokenHolder = next;
+
+      if (state.isRunning && !state.isPaused) {
+        setTimeout(() => {
+          transferToken();
+        }, 400 / state.speed);
+      }
+    }
+
+    function drawRing() {
+      const canvas = document.getElementById(CANVAS_ID);
+      const ctx = canvas.getContext('2d');
+      const parent = canvas.parentElement;
+
+      // Usar las dimensiones reales del contenedor
+      const width = parent.clientWidth - 40; // 40px = padding
+      const height = parent.clientHeight - 40;
+      
+      canvas.width = width;
+      canvas.height = height;
+
+      ctx.fillStyle = 'rgba(34, 197, 94, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = 'rgba(34, 197, 94, 0.15)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      state.processes.forEach((proc, i) => {
+        if (i === 0) ctx.moveTo(proc.x, proc.y);
+        else ctx.lineTo(proc.x, proc.y);
+      });
+      ctx.closePath();
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(34, 197, 94, 0.2)';
+      ctx.fillStyle = 'rgba(34, 197, 94, 0.2)';
+      for (let i = 0; i < state.processes.length; i++) {
+        const from = state.processes[i];
+        const to = state.processes[(i + 1) % state.processes.length];
+
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const unitX = dx / distance;
+        const unitY = dy / distance;
+
+        const arrowX = from.x + unitX * (distance * 0.7);
+        const arrowY = from.y + unitY * (distance * 0.7);
+
+        ctx.beginPath();
+        ctx.moveTo(arrowX, arrowY);
+        ctx.lineTo(arrowX - unitX * 15 - unitY * 8, arrowY - unitY * 15 + unitX * 8);
+        ctx.lineTo(arrowX - unitX * 15 + unitY * 8, arrowY - unitY * 15 - unitX * 8);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      state.processes.forEach((proc) => {
+        ctx.beginPath();
+        ctx.arc(proc.x, proc.y, PROCESS_RADIUS, 0, Math.PI * 2);
+
+        if (proc.status === 'holding-token') {
+          ctx.fillStyle = 'rgba(217, 119, 6, 0.4)';
+          ctx.fill();
+          ctx.shadowColor = '#d97706';
+          ctx.shadowBlur = 30;
+
+          ctx.beginPath();
+          ctx.arc(proc.x, proc.y, PROCESS_RADIUS + 15, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(217, 119, 6, 0.3)';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        } else if (proc.status === 'in-cs') {
+          ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
+          ctx.fill();
+          ctx.shadowColor = '#22c55e';
+          ctx.shadowBlur = 20;
+        } else if (proc.status === 'waiting') {
+          ctx.fillStyle = 'rgba(251, 146, 60, 0.2)';
+          ctx.fill();
+          ctx.shadowColor = '#fb923c';
+          ctx.shadowBlur = 15;
+        } else {
+          ctx.fillStyle = 'rgba(107, 114, 128, 0.2)';
+          ctx.fill();
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+        }
+
+        ctx.strokeStyle = proc.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#1f2937';
+        ctx.font = 'bold 22px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(proc.emoji, proc.x, proc.y - 10);
+
+        ctx.font = '13px Arial';
+        ctx.fillStyle = '#6b7280';
+        ctx.fillText(`P${proc.id}`, proc.x, proc.y + 18);
+
+        if (proc.status === 'holding-token') {
+          ctx.font = 'bold 10px Arial';
+          ctx.fillStyle = '#d97706';
+          ctx.fillText('🎤', proc.x, proc.y + 32);
+        } else if (proc.status === 'waiting') {
+          ctx.font = 'bold 10px Arial';
+          ctx.fillStyle = '#fb923c';
+          ctx.fillText('⏳', proc.x, proc.y + 32);
+        }
+      });
+
+      ctx.shadowColor = 'transparent';
+      requestAnimationFrame(drawRing);
+    }
+
+    function updateProcessesInfo() {
+      const container = document.getElementById('processesInfo');
+      container.innerHTML = state.processes
+        .map(
+          (proc) => `
+        <div class="process-badge ${proc.status === 'holding-token' ? 'holding-token' : proc.status === 'waiting' ? 'waiting' : 'idle'}">
+          <div class="process-name">${proc.emoji} P${proc.id}</div>
+          <div class="process-status">${proc.status}</div>
+        </div>
+      `
+        )
+        .join('');
+    }
+
+    function addMessage(from, to, type, detail) {
+      const msg = { from, to, type, detail };
+      state.messages.unshift(msg);
+
+      if (state.messages.length > 20) state.messages.pop();
+
+      updateMessagesLog();
+    }
+
+    function updateMessagesLog() {
+      const log = document.getElementById('messagesLog');
+      log.innerHTML = state.messages
+        .map(
+          (msg) => `
+        <div class="message-item message-${msg.type.toLowerCase()}">
+          <strong>${msg.from} → ${msg.to}</strong> [${msg.type}] ${msg.detail}
+        </div>
+      `
+        )
+        .join('');
+      log.scrollTop = 0;
+    }
+
+    function updateStats() {
+      document.getElementById('stat-passes').textContent = state.stats.passes;
+      document.getElementById('stat-cs').textContent = state.stats.cs;
+
+      const avgWait =
+        state.stats.waitTimes.length > 0
+          ? Math.round(state.stats.waitTimes.reduce((a, b) => a + b, 0) / state.stats.waitTimes.length)
+          : 0;
+      document.getElementById('stat-wait').textContent = avgWait + ' ms';
+
+      document.getElementById('stat-holder').textContent = `P${state.tokenHolder}`;
+      document.getElementById('stat-next').textContent = `P${(state.tokenHolder + 1) % NUM_PROCESSES}`;
+
+      updateProcessesInfo();
+    }
+
+    function startSimulation() {
+      if (!state.isRunning) {
+        state.isRunning = true;
+        state.isPaused = false;
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('pauseBtn').disabled = false;
+
+        state.processes.forEach((proc, idx) => {
+          setTimeout(
+            () => {
+              if (state.isRunning && !state.isPaused) {
+                requestCS(proc);
+              }
+            },
+            200 * (idx + 1)
+          );
+        });
+
+        setTimeout(() => {
+          transferToken();
+        }, 500);
+      }
+    }
+
+    function pauseSimulation() {
+      state.isPaused = !state.isPaused;
+      document.getElementById('pauseBtn').textContent = state.isPaused ? '▶ Reanudar' : '⏸ Pausar';
+    }
+
+    function resetSimulation() {
+      state.isRunning = false;
+      state.isPaused = false;
+      state.tokenHolder = 0;
+      state.processes.forEach((proc) => proc.reset());
+      state.messages = [];
+      state.stats = { passes: 0, cs: 0, waitTimes: [], requestTimes: {} };
+      state.processes[0].status = 'holding-token';
+
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('pauseBtn').disabled = true;
+      document.getElementById('pauseBtn').textContent = '⏸ Pausar';
+
+      updateStats();
+      updateMessagesLog();
+    }
+
+    function updateSpeed(value) {
+      state.speed = parseFloat(value);
+      document.getElementById('speedValue').textContent = value + 'x';
+    }
+
+    setInterval(() => {
+      if (state.isRunning && !state.isPaused) {
+        updateStats();
+      }
+    }, 500);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initSimulation();
+      drawRing();
+      updateStats();
+      updateMessagesLog();
+    });
+  </script>
+</body>
+</html>

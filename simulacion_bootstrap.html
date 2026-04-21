@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Club VIP — Exclusión Mutua Centralizada</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg: linear-gradient(135deg, #fafafa 0%, #f5f1ff 50%, #f0fdf4 100%);
+      --surface: rgba(255, 255, 255, 0.9);
+      --border: rgba(139, 92, 246, 0.2);
+      --text: #1f2937;
+      --muted: #6b7280;
+      --p1: #0891b2;
+      --p2: #7c3aed;
+      --p3: #ca8a04;
+      --p4: #15803d;
+      --coord: #dc2626;
+      --vip-gold: #d97706;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
+
+    .btn-back {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(34, 211, 238, 0.1);
+      border: 1px solid rgba(34, 211, 238, 0.4);
+      color: #0891b2;
+      z-index: 100;
+    }
+
+    .btn-back:hover {
+      background: rgba(34, 211, 238, 0.2);
+      border-color: rgba(34, 211, 238, 0.6);
+      color: #0891b2;
+    }
+
+    header h1 {
+      background: linear-gradient(135deg, #22d3ee 0%, #e879f9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      color: #4b5563;
+    }
+
+    .msg-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .msg-req { background: rgba(202, 138, 4, 0.15); color: #b45309; border: 1px solid rgba(202, 138, 4, 0.3); }
+    .msg-gnt { background: rgba(34, 197, 94, 0.15); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .msg-rel { background: rgba(220, 38, 38, 0.15); color: #991b1b; border: 1px solid rgba(220, 38, 38, 0.3); }
+
+    .card {
+      background: linear-gradient(135deg, #ffffff 0%, #f9f5ff 100%) !important;
+      border: 1px solid rgba(139, 92, 246, 0.2) !important;
+      color: var(--text);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-header {
+      background: rgba(139, 92, 246, 0.08) !important;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.15) !important;
+    }
+
+    .card-header small {
+      color: #7c3aed !important;
+    }
+
+    .pcard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      transition: all 0.3s ease;
+      color: var(--text);
+    }
+
+    .pcard.requesting {
+      border-color: #ca8a04;
+      box-shadow: 0 0 18px rgba(202, 138, 4, 0.25);
+      animation: pulse-amber 0.8s ease-in-out infinite;
+    }
+
+    .pcard.waiting { 
+      border-color: #7c3aed;
+      box-shadow: 0 0 14px rgba(124, 58, 237, 0.2);
+    }
+
+    .pcard.in_vip {
+      border-color: #15803d;
+      box-shadow: 0 0 24px rgba(21, 128, 61, 0.35);
+      animation: pulse-green 1.1s ease-in-out infinite;
+    }
+
+    .pcard.done {
+      border-color: #38bdf8;
+      opacity: 0.6;
+    }
+
+    @keyframes pulse-amber {
+      0%, 100% { box-shadow: 0 0 18px rgba(202, 138, 4, 0.25); }
+      50% { box-shadow: 0 0 30px rgba(202, 138, 4, 0.55); }
+    }
+
+    @keyframes pulse-green {
+      0%, 100% { box-shadow: 0 0 24px rgba(21, 128, 61, 0.35); }
+      50% { box-shadow: 0 0 42px rgba(21, 128, 61, 0.7); }
+    }
+
+    .vip-card {
+      background: linear-gradient(135deg, rgba(217, 119, 6, 0.1), rgba(220, 38, 38, 0.05)) !important;
+      border: 2px solid var(--vip-gold) !important;
+      box-shadow: 0 0 40px rgba(217, 119, 6, 0.2), inset 0 0 30px rgba(217, 119, 6, 0.05);
+      animation: glow-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes glow-pulse {
+      0%, 100% { box-shadow: 0 0 40px rgba(217, 119, 6, 0.2), inset 0 0 30px rgba(217, 119, 6, 0.05); }
+      50% { box-shadow: 0 0 60px rgba(217, 119, 6, 0.4), inset 0 0 40px rgba(217, 119, 6, 0.1); }
+    }
+
+    .vip-occupant {
+      font-size: 3.5rem;
+      filter: drop-shadow(0 0 15px rgba(217, 119, 6, 0.4));
+      animation: vip-bounce 1.2s ease-in-out infinite;
+    }
+
+    @keyframes vip-bounce {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .coord-card {
+      background: var(--surface) !important;
+      border: 2px solid rgba(220, 38, 38, 0.3) !important;
+      border-radius: 14px;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      color: var(--text);
+    }
+
+    .coord-card.flash {
+      border-color: var(--coord);
+      box-shadow: 0 0 28px rgba(220, 38, 38, 0.5);
+    }
+
+    .queue-card {
+      background: rgba(124, 58, 237, 0.07) !important;
+      border: 1px solid rgba(124, 58, 237, 0.25) !important;
+      border-radius: 10px;
+      color: var(--text);
+    }
+
+    .queue-card small {
+      color: #7c3aed !important;
+    }
+
+    .qchip {
+      background: rgba(124, 58, 237, 0.2);
+      border: 1px solid rgba(124, 58, 237, 0.4);
+      border-radius: 20px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      animation: pop 0.25s ease;
+      color: var(--text);
+    }
+
+    @keyframes pop {
+      from { transform: scale(0.6); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .btn-control {
+      padding: 10px 22px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border-radius: 10px;
+      transition: transform 0.15s, opacity 0.15s;
+      color: #ffffff;
+    }
+
+    .btn-control.btn-primary {
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      border: none;
+    }
+
+    .btn-control.btn-success {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      border: none;
+    }
+
+    .btn-control.btn-warning {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      border: none;
+    }
+
+    .btn-control:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+
+    .btn-control:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .log-entry {
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 1px;
+      animation: slidein 0.25s ease;
+      line-height: 1.5;
+      font-family: 'Courier New', monospace;
+      font-size: 0.76rem;
+    }
+
+    @keyframes slidein {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .log-req { color: #b45309; background: rgba(202, 138, 4, 0.1); }
+    .log-gnt { color: #15803d; background: rgba(34, 197, 94, 0.1); }
+    .log-rel { color: #991b1b; background: rgba(220, 38, 38, 0.1); }
+    .log-st { color: #5b21b6; background: rgba(124, 58, 237, 0.1); }
+    .log-info { color: var(--muted); background: rgba(107, 114, 128, 0.08); }
+  </style>
+</head>
+<body>
+  <a href="index_bootstrap.html" class="btn btn-back btn-sm">← Volver</a>
+
+  <div class="container py-4">
+    <header class="text-center mb-4">
+      <h1 class="mb-2">🎵 Club VIP — Exclusión Mutua Centralizada</h1>
+      <p class="text-muted mb-3">Solo una persona puede estar en el VIP a la vez. El coordinador (portero) controla quién entra.</p>
+      <div class="d-flex gap-2 justify-content-center flex-wrap">
+        <span class="msg-badge msg-req">📨 REQUEST</span>
+        <span class="msg-badge msg-gnt">✅ GRANT</span>
+        <span class="msg-badge msg-rel">📤 RELEASE</span>
+      </div>
+    </header>
+
+    <div class="row g-3 mb-4">
+      <!-- Procesos -->
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header bg-dark">
+            <small class="text-muted text-uppercase">👥 Procesos</small>
+          </div>
+          <div class="card-body">
+            <div class="d-flex flex-column gap-2" id="processes-container">
+              <div class="pcard idle" id="card-P1">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="fs-4">🧑</span>
+                  <div class="flex-grow-1">
+                    <div class="fw-bold" style="color: var(--p1);">P1</div>
+                    <small class="text-muted" id="st-P1">En espera…</small>
+                  </div>
+                  <span class="badge bg-secondary" id="badge-P1">💤 idle</span>
+                </div>
+              </div>
+
+              <div class="pcard idle" id="card-P2">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="fs-4">👩</span>
+                  <div class="flex-grow-1">
+                    <div class="fw-bold" style="color: var(--p2);">P2</div>
+                    <small class="text-muted" id="st-P2">En espera…</small>
+                  </div>
+                  <span class="badge bg-secondary" id="badge-P2">💤 idle</span>
+                </div>
+              </div>
+
+              <div class="pcard idle" id="card-P3">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="fs-4">🧔</span>
+                  <div class="flex-grow-1">
+                    <div class="fw-bold" style="color: var(--p3);">P3</div>
+                    <small class="text-muted" id="st-P3">En espera…</small>
+                  </div>
+                  <span class="badge bg-secondary" id="badge-P3">💤 idle</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coordinador -->
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header bg-dark">
+            <small class="text-muted text-uppercase">🎩 Coordinador</small>
+          </div>
+          <div class="card-body">
+            <div class="coord-card p-4 mb-3 text-center">
+              <span class="fs-1">🎩</span>
+              <div class="fw-bold mt-2">Coordinador</div>
+              <small class="text-muted">El Portero</small>
+            </div>
+            
+            <div class="queue-card p-3 mb-3">
+              <small class="text-info text-uppercase fw-bold">🧍 Cola de espera</small>
+              <div class="mt-2" id="queue-items">
+                <small class="text-muted">vacía</small>
+              </div>
+            </div>
+
+            <small class="d-block text-center text-muted">
+              Mensajes: <strong id="msg-count">0</strong>
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIP -->
+      <div class="col-lg-4">
+        <div class="card vip-card">
+          <div class="card-header bg-dark">
+            <small class="text-warning text-uppercase">✨ Sala VIP</small>
+          </div>
+          <div class="card-body text-center py-5">
+            <div class="mb-2" style="color: var(--vip-gold);">★ ★ ★</div>
+            <div class="vip-occupant" id="vip-person"></div>
+            <div id="vip-pname" class="fw-bold" style="display: none;"></div>
+            <div id="vip-empty" class="text-muted">libre 🔓</div>
+            <div class="progress mt-3" id="vip-bar-wrap" style="display: none; height: 6px;">
+              <div class="progress-bar" id="vip-bar" style="background: var(--vip-gold);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="card mb-4">
+      <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+        <small class="text-muted text-uppercase">📋 Log de eventos</small>
+        <small class="text-muted" id="log-count">0 mensajes</small>
+      </div>
+      <div class="card-body" id="log-body" style="max-height: 300px; overflow-y: auto; font-family: monospace;">
+        <div class="log-info">— Selecciona un escenario para comenzar —</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="d-flex gap-2 justify-content-center flex-wrap mb-4">
+      <button class="btn btn-info btn-control" id="btn1" onclick="runScenario(1)">
+        ▶ Escenario 1 — Sin contención
+      </button>
+      <button class="btn btn-warning btn-control" id="btn2" onclick="runScenario(2)">
+        ▶ Escenario 2 — ¡Todos a la vez!
+      </button>
+      <button class="btn btn-secondary btn-control" onclick="resetSim()">
+        ↺ Reiniciar
+      </button>
+    </div>
+
+    <!-- Resumen del algoritmo -->
+    <div class="card">
+      <div class="card-header bg-dark">
+        <small class="text-muted text-uppercase">¿Cómo funciona?</small>
+      </div>
+      <div class="card-body">
+        <div class="row g-2 mb-3">
+          <div class="col-md-3">
+            <div class="p-2 rounded border border-secondary">
+              <strong>1</strong> REQUEST
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="p-2 rounded border border-secondary">
+              <strong>2</strong> GRANT
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="p-2 rounded border border-secondary">
+              <strong>3</strong> WORK
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="p-2 rounded border border-secondary">
+              <strong>4</strong> RELEASE
+            </div>
+          </div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <span class="badge bg-success">✅ Exclusión mutua garantizada</span>
+          <span class="badge bg-success">✅ Sin inanición (FIFO)</span>
+          <span class="badge bg-success">✅ 3 mensajes por acceso</span>
+          <span class="badge bg-warning">⚠️ Punto único de fallo</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const P = {
+      P1: { emoji: '🧑', color: 'var(--p1)' },
+      P2: { emoji: '👩', color: 'var(--p2)' },
+      P3: { emoji: '🧔', color: 'var(--p3)' },
+    };
+
+    const STATE_LABELS = {
+      idle: { status: 'En espera…', badge: '💤 idle' },
+      requesting: { status: 'Enviando REQUEST…', badge: '📨 request' },
+      waiting: { status: 'En la cola…', badge: '⏳ en cola' },
+      in_vip: { status: '¡En el VIP!', badge: '🌟 en VIP' },
+      done: { status: 'Terminó ✓', badge: '✅ listo' },
+    };
+
+    let msgCount = 0;
+    let running = false;
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    function log(html, type = 'info') {
+      const body = document.getElementById('log-body');
+      const el = document.createElement('div');
+      el.className = `log-entry log-${type}`;
+      el.innerHTML = html;
+      body.appendChild(el);
+      body.scrollTop = body.scrollHeight;
+      if (type !== 'info') {
+        msgCount++;
+        document.getElementById('msg-count').textContent = msgCount;
+        document.getElementById('log-count').textContent = `${msgCount} mensajes`;
+      }
+    }
+
+    function col(pid) {
+      return `<span style="color:${P[pid].color}">${P[pid].emoji} ${pid}</span>`;
+    }
+
+    function coord() {
+      return `<span style="color:var(--coord)">🎩 Coord</span>`;
+    }
+
+    function setProcess(pid, state) {
+      const card = document.getElementById(`card-${pid}`);
+      const stEl = document.getElementById(`st-${pid}`);
+      const badge = document.getElementById(`badge-${pid}`);
+      card.className = `pcard ${state}`;
+      stEl.textContent = STATE_LABELS[state].status;
+      badge.textContent = STATE_LABELS[state].badge;
+    }
+
+    function flashCoord() {
+      const c = document.querySelector('.coord-card');
+      c.classList.add('flash');
+      setTimeout(() => c.classList.remove('flash'), 500);
+    }
+
+    function setVip(pid) {
+      const person = document.getElementById('vip-person');
+      const pname = document.getElementById('vip-pname');
+      const empty = document.getElementById('vip-empty');
+      const barW = document.getElementById('vip-bar-wrap');
+
+      if (pid) {
+        person.textContent = P[pid].emoji;
+        pname.textContent = pid;
+        pname.style.color = P[pid].color;
+        pname.style.display = 'block';
+        empty.style.display = 'none';
+        barW.style.display = 'block';
+        startProgress(1000);
+      } else {
+        person.textContent = '';
+        pname.style.display = 'none';
+        empty.style.display = 'block';
+        barW.style.display = 'none';
+      }
+    }
+
+    function startProgress(ms) {
+      const bar = document.getElementById('vip-bar');
+      bar.style.transition = 'none';
+      bar.style.width = '0';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        bar.style.transition = `width ${ms}ms linear`;
+        bar.style.width = '100%';
+      }));
+    }
+
+    function updateQueue(queue) {
+      const el = document.getElementById('queue-items');
+      if (queue.length === 0) {
+        el.innerHTML = '<small class="text-muted">vacía</small>';
+      } else {
+        el.innerHTML = queue.map((pid, i) =>
+          `<span class="qchip" style="color:${P[pid].color}">
+            ${P[pid].emoji} ${pid} <span style="color:var(--muted)">#${i + 1}</span>
+          </span>`
+        ).join('');
+      }
+    }
+
+    async function doRequest(pid) {
+      setProcess(pid, 'requesting');
+      flashCoord();
+      log(`📨 ${col(pid)} ──► ${coord()} │ REQUEST`, 'req');
+      await sleep(380);
+    }
+
+    async function doGrantImmediate(pid) {
+      flashCoord();
+      log(`✅ ${coord()} ──► ${col(pid)} │ GRANT inmediato`, 'gnt');
+      setProcess(pid, 'in_vip');
+      setVip(pid);
+      await sleep(250);
+    }
+
+    async function doEnqueue(pid, queue) {
+      queue.push(pid);
+      setProcess(pid, 'waiting');
+      log(`⏳ ${col(pid)} → en cola [#${queue.length}]`, 'st');
+      updateQueue(queue);
+      await sleep(200);
+    }
+
+    async function doWork(pid, ms) {
+      log(`🌟 ${col(pid)} trabajando…`, 'st');
+      await sleep(ms);
+    }
+
+    async function doRelease(pid, queue) {
+      log(`📤 ${col(pid)} ──► ${coord()} │ RELEASE`, 'rel');
+      setProcess(pid, 'done');
+      setVip(null);
+      flashCoord();
+      await sleep(350);
+
+      if (queue.length > 0) {
+        const next = queue.shift();
+        updateQueue(queue);
+        log(`✅ ${coord()} ──► ${col(next)} │ GRANT`, 'gnt');
+        setProcess(next, 'in_vip');
+        setVip(next);
+        await sleep(200);
+        return next;
+      }
+
+      updateQueue(queue);
+      return null;
+    }
+
+    async function scenario1() {
+      log('━ ESCENARIO 1: Acceso secuencial ━', 'info');
+      const queue = [];
+
+      await doRequest('P1', queue);
+      await doGrantImmediate('P1', queue);
+      await doWork('P1', 900);
+      await doRelease('P1', queue);
+
+      await sleep(500);
+
+      await doRequest('P2', queue);
+      await doGrantImmediate('P2', queue);
+      await doWork('P2', 750);
+      await doRelease('P2', queue);
+
+      await sleep(500);
+
+      await doRequest('P3', queue);
+      await doGrantImmediate('P3', queue);
+      await doWork('P3', 600);
+      await doRelease('P3', queue);
+
+      log('✔ Completado 🎉', 'info');
+    }
+
+    async function scenario2() {
+      log('━ ESCENARIO 2: ¡Todos a la vez! ━', 'info');
+      const queue = [];
+
+      await doRequest('P1', queue);
+      await doGrantImmediate('P1', queue);
+
+      const p1Work = doWork('P1', 1300);
+
+      await sleep(220);
+      await doRequest('P2', queue);
+      await doEnqueue('P2', queue);
+
+      await sleep(130);
+      await doRequest('P3', queue);
+      await doEnqueue('P3', queue);
+
+      await p1Work;
+      let next = await doRelease('P1', queue);
+
+      if (next) { await doWork(next, 950); next = await doRelease(next, queue); }
+      if (next) { await doWork(next, 750); await doRelease(next, queue); }
+
+      log('✔ Completado 🎉', 'info');
+    }
+
+    async function runScenario(n) {
+      if (running) return;
+      running = true;
+      document.getElementById('btn1').disabled = true;
+      document.getElementById('btn2').disabled = true;
+      resetSim(false);
+
+      if (n === 1) await scenario1();
+      else await scenario2();
+
+      running = false;
+      document.getElementById('btn1').disabled = false;
+      document.getElementById('btn2').disabled = false;
+    }
+
+    function resetSim(clearLog = true) {
+      running = false;
+      ['P1', 'P2', 'P3'].forEach(p => setProcess(p, 'idle'));
+      setVip(null);
+      updateQueue([]);
+      if (clearLog) {
+        msgCount = 0;
+        document.getElementById('msg-count').textContent = '0';
+        document.getElementById('log-count').textContent = '0 mensajes';
+        document.getElementById('log-body').innerHTML = '<div class="log-info">— Selecciona un escenario —</div>';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Red de Amigos — Ricard-Agrawala</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #7c3aed;
+      --bg: linear-gradient(135deg, #fafafa 0%, #f5f1ff 50%, #f0fdf4 100%);
+    }
+
+    body {
+      background: var(--bg);
+      color: #1f2937;
+    }
+
+    header h1 {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .btn-back {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(124, 58, 237, 0.1);
+      border: 1px solid rgba(124, 58, 237, 0.4);
+      color: #7c3aed;
+      z-index: 100;
+    }
+
+    .btn-back:hover {
+      background: rgba(124, 58, 237, 0.2);
+      color: #7c3aed;
+    }
+
+    .card {
+      background: linear-gradient(135deg, #ffffff 0%, #f9f5ff 100%) !important;
+      border: 1px solid rgba(139, 92, 246, 0.2) !important;
+      color: #1f2937;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-header {
+      background: rgba(139, 92, 246, 0.08) !important;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.15) !important;
+    }
+
+    .card-header small {
+      color: #7c3aed !important;
+    }
+
+    .network-container {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(124, 58, 237, 0.05));
+      border: 2px solid rgba(124, 58, 237, 0.2);
+      border-radius: 12px;
+      width: 100%;
+      height: 400px;
+      min-height: 400px;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      animation: network-glow 4s ease-in-out infinite;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .network-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+      max-width: 100%;
+    }
+
+    @keyframes network-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.1); }
+      50% { box-shadow: 0 0 40px rgba(124, 58, 237, 0.2); }
+    }
+
+    .process-badge {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(109, 40, 217, 0.05));
+      border: 2px solid rgba(124, 58, 237, 0.3);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      font-size: 0.85rem;
+      transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      color: #1f2937;
+    }
+
+    .process-badge.requesting {
+      background: linear-gradient(135deg, rgba(202, 138, 4, 0.15), rgba(202, 138, 4, 0.05));
+      border-color: rgba(202, 138, 4, 0.6);
+      box-shadow: 0 0 20px rgba(202, 138, 4, 0.3);
+      animation: pulse-badge 1s ease-in-out infinite;
+      color: #92400e;
+    }
+
+    @keyframes pulse-badge {
+      0%, 100% { box-shadow: 0 0 20px rgba(202, 138, 4, 0.3); transform: scale(1); }
+      50% { box-shadow: 0 0 30px rgba(202, 138, 4, 0.5); transform: scale(1.05); }
+    }
+
+    .process-badge.in-cs {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(109, 40, 217, 0.15));
+      border-color: rgba(124, 58, 237, 0.8);
+      box-shadow: 0 0 30px rgba(124, 58, 237, 0.5);
+      font-weight: 700;
+      transform: scale(1.08);
+      color: #5b21b6;
+    }
+
+    .btn-launch {
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      border: none;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .btn-launch:hover {
+      box-shadow: 0 10px 30px rgba(124, 58, 237, 0.4);
+      transform: translateY(-2px);
+      color: #ffffff;
+    }
+
+    .stat-value {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+      font-size: 1.5rem;
+    }
+
+    .message-item {
+      font-size: 0.85rem;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-left: 3px solid #7c3aed;
+      background: rgba(124, 58, 237, 0.08);
+      border-radius: 4px;
+      animation: slideInRight 0.3s ease;
+      color: #1f2937;
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .message-request { border-left-color: #b45309; color: #92400e; background: rgba(202, 138, 4, 0.1); }
+    .message-ack { border-left-color: #15803d; color: #15803d; background: rgba(34, 197, 94, 0.1); }
+    .message-release { border-left-color: #991b1b; color: #991b1b; background: rgba(220, 38, 38, 0.1); }
+  </style>
+</head>
+<body>
+  <a href="index_bootstrap.html" class="btn btn-back btn-sm">← Volver</a>
+
+  <div class="container py-4">
+    <header class="text-center mb-4">
+      <h1 class="mb-2">🤝 Red de Amigos</h1>
+      <p class="text-muted mb-3">Algoritmo de Ricard-Agrawala para exclusión mutua distribuida</p>
+      <p class="small text-muted">Cada proceso pide permiso a TODOS sus compañeros. Solo entra cuando todos dicen OK.</p>
+    </header>
+
+    <div class="row g-3 mb-4">
+      <!-- Visualización -->
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header bg-dark">
+            <small class="text-muted text-uppercase">🌐 Red de Procesos</small>
+          </div>
+          <div class="card-body p-0">
+            <div class="network-container">
+              <canvas id="networkCanvas"></canvas>
+            </div>
+            <div class="row g-2 p-3" id="processesInfo"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Panel -->
+      <div class="col-lg-4">
+        <!-- Stats -->
+        <div class="card mb-3">
+          <div class="card-header bg-dark">
+            <small class="text-muted text-uppercase">📊 Estadísticas</small>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-6">
+                <small class="text-muted">Solicitudes</small>
+                <div class="stat-value" id="stat-requests">0</div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">Permisos</small>
+                <div class="stat-value" id="stat-acks">0</div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">Accesos CS</small>
+                <div class="stat-value" id="stat-cs">0</div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">Mensajes</small>
+                <div class="stat-value" id="stat-messages">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="card">
+          <div class="card-header bg-dark">
+            <small class="text-muted text-uppercase">🎮 Controles</small>
+          </div>
+          <div class="card-body">
+            <div class="d-flex gap-2 flex-wrap mb-3">
+              <button class="btn btn-launch btn-sm" id="startBtn" onclick="startSimulation()">▶ Iniciar</button>
+              <button class="btn btn-secondary btn-sm" id="pauseBtn" onclick="pauseSimulation()" disabled>⏸ Pausar</button>
+              <button class="btn btn-secondary btn-sm" onclick="resetSimulation()">🔄 Reiniciar</button>
+            </div>
+            
+            <label class="form-label small mb-2">⚡ Velocidad</label>
+            <input type="range" class="form-range" min="0.5" max="3" step="0.5" value="1" id="speedSlider" oninput="updateSpeed(this.value)">
+            <small class="text-muted d-block text-center mt-2">
+              <span id="speedValue">1x</span>
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensajes -->
+    <div class="card">
+      <div class="card-header bg-dark">
+        <small class="text-muted text-uppercase">💬 Actividad</small>
+      </div>
+      <div class="card-body" id="messagesLog" style="max-height: 250px; overflow-y: auto; font-family: monospace; font-size: 0.85rem;"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const NUM_PROCESSES = 4;
+    const CANVAS_ID = 'networkCanvas';
+    const PROCESS_RADIUS = 25;
+
+    const state = {
+      isRunning: false,
+      isPaused: false,
+      speed: 1,
+      processes: [],
+      messages: [],
+      stats: {
+        requests: 0,
+        acks: 0,
+        cs: 0,
+        messages: 0,
+        totalTime: 0,
+        count: 0
+      }
+    };
+
+    class Process {
+      constructor(id, x, y) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.status = 'idle';
+        this.timestamp = 0;
+        this.requestTimestamp = 0;
+        this.ackedBy = new Set();
+        this.deferredRequests = [];
+        this.color = ['#7c3aed', '#6d28d9', '#5b21b6', '#4c1d95'][id];
+        this.emoji = ['🧑', '👩', '🧔', '👨'][id];
+      }
+
+      reset() {
+        this.status = 'idle';
+        this.timestamp = 0;
+        this.requestTimestamp = 0;
+        this.ackedBy.clear();
+        this.deferredRequests = [];
+      }
+    }
+
+    function initSimulation() {
+      state.processes = [];
+      const canvas = document.getElementById(CANVAS_ID);
+      const parent = canvas.parentElement;
+      
+      const width = parent.clientWidth - 40;
+      const height = parent.clientHeight - 40;
+      const radius = Math.min(width, height) * 0.32;
+      const cx = width / 2;
+      const cy = height / 2;
+      
+      for (let i = 0; i < NUM_PROCESSES; i++) {
+        const angle = (i * 2 * Math.PI) / NUM_PROCESSES;
+        const x = cx + Math.cos(angle) * radius;
+        const y = cy + Math.sin(angle) * radius;
+        state.processes.push(new Process(i, x, y));
+      }
+      updateProcessesInfo();
+    }
+
+    function getOtherProcesses(proc) {
+      return state.processes.filter((p) => p.id !== proc.id);
+    }
+
+    function requestCriticalSection(proc) {
+      proc.status = 'requesting';
+      proc.requestTimestamp = Date.now();
+      proc.timestamp++;
+      proc.ackedBy.clear();
+
+      addMessage(`${proc.emoji} P${proc.id}`, 'ALL', 'REQUEST', `Solicita acceso (ts: ${proc.timestamp})`);
+      state.stats.requests++;
+
+      getOtherProcesses(proc).forEach((other) => {
+        handleRequest(other, proc);
+      });
+    }
+
+    function handleRequest(receiver, sender) {
+      state.stats.messages++;
+
+      if (receiver.status === 'idle' || receiver.timestamp < sender.timestamp) {
+        sendAck(receiver, sender);
+      } else {
+        receiver.deferredRequests.push(sender);
+      }
+    }
+
+    function sendAck(from, to) {
+      addMessage(`${from.emoji} P${from.id}`, `${to.emoji} P${to.id}`, 'ACK', 'Otorga permiso');
+      state.stats.messages++;
+
+      if (to.status === 'requesting') {
+        to.ackedBy.add(from.id);
+
+        if (to.ackedBy.size === NUM_PROCESSES - 1) {
+          enterCriticalSection(to);
+        }
+      }
+    }
+
+    function enterCriticalSection(proc) {
+      proc.status = 'in-cs';
+      addMessage(`✨ P${proc.id}`, 'CS', 'ENTER', 'Entra a la sección crítica');
+      state.stats.cs++;
+
+      setTimeout(() => {
+        exitCriticalSection(proc);
+      }, 1000 / state.speed);
+    }
+
+    function exitCriticalSection(proc) {
+      proc.status = 'idle';
+      proc.timestamp++;
+
+      addMessage(`🔓 P${proc.id}`, 'ALL', 'RELEASE', 'Libera la sección crítica');
+
+      const deferred = proc.deferredRequests;
+      proc.deferredRequests = [];
+
+      deferred.forEach((other) => {
+        sendAck(proc, other);
+      });
+
+      if (proc.requestTimestamp > 0) {
+        const elapsed = Date.now() - proc.requestTimestamp;
+        state.stats.totalTime += elapsed;
+        state.stats.count++;
+      }
+
+      if (state.isRunning && !state.isPaused) {
+        setTimeout(() => {
+          requestCriticalSection(proc);
+        }, (500 * Math.random()) / state.speed);
+      }
+    }
+
+    function drawNetwork() {
+      const canvas = document.getElementById(CANVAS_ID);
+      const ctx = canvas.getContext('2d');
+      const parent = canvas.parentElement;
+
+      // Usar las dimensiones reales del contenedor
+      const width = parent.clientWidth - 40; // 40px = padding
+      const height = parent.clientHeight - 40;
+      
+      canvas.width = width;
+      canvas.height = height;
+
+      ctx.fillStyle = 'rgba(124, 58, 237, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = 'rgba(124, 58, 237, 0.2)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < state.processes.length; i++) {
+        const p1 = state.processes[i];
+        const p2 = state.processes[(i + 1) % state.processes.length];
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+
+      state.processes.forEach((proc) => {
+        ctx.beginPath();
+        ctx.arc(proc.x, proc.y, PROCESS_RADIUS, 0, Math.PI * 2);
+
+        if (proc.status === 'in-cs') {
+          ctx.fillStyle = proc.color;
+          ctx.fill();
+          ctx.shadowColor = proc.color;
+          ctx.shadowBlur = 20;
+        } else if (proc.status === 'requesting') {
+          ctx.fillStyle = 'rgba(202, 138, 4, 0.3)';
+          ctx.fill();
+          ctx.shadowColor = '#ca8a04';
+          ctx.shadowBlur = 15;
+        } else {
+          ctx.fillStyle = 'rgba(107, 114, 128, 0.3)';
+          ctx.fill();
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+        }
+
+        ctx.strokeStyle = proc.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#1f2937';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(proc.emoji, proc.x, proc.y - 10);
+        ctx.font = '12px Arial';
+        ctx.fillText(`P${proc.id}`, proc.x, proc.y + 15);
+
+        ctx.font = 'bold 10px Arial';
+        ctx.fillStyle = '#6b7280';
+        ctx.fillText(proc.status.toUpperCase(), proc.x, proc.y + 30);
+      });
+
+      ctx.shadowColor = 'transparent';
+      requestAnimationFrame(drawNetwork);
+    }
+
+    function updateProcessesInfo() {
+      const container = document.getElementById('processesInfo');
+      container.innerHTML = state.processes
+        .map(
+          (proc) => `
+        <div class="process-badge ${proc.status}">
+          <div class="process-name">${proc.emoji} P${proc.id}</div>
+          <div class="process-status">${proc.status}</div>
+        </div>
+      `
+        )
+        .join('');
+    }
+
+    function addMessage(from, to, type, detail) {
+      const msg = { from, to, type, detail, time: new Date().toLocaleTimeString() };
+      state.messages.unshift(msg);
+
+      if (state.messages.length > 20) state.messages.pop();
+
+      updateMessagesLog();
+    }
+
+    function updateMessagesLog() {
+      const log = document.getElementById('messagesLog');
+      log.innerHTML = state.messages
+        .map(
+          (msg) => `
+        <div class="message-item message-${msg.type.toLowerCase()}">
+          <strong>${msg.from} → ${msg.to}</strong> [${msg.type}] ${msg.detail}
+        </div>
+      `
+        )
+        .join('');
+      log.scrollTop = 0;
+    }
+
+    function updateStats() {
+      document.getElementById('stat-requests').textContent = state.stats.requests;
+      document.getElementById('stat-acks').textContent = state.stats.messages;
+      document.getElementById('stat-cs').textContent = state.stats.cs;
+      document.getElementById('stat-messages').textContent = state.stats.messages;
+
+      const avgTime = state.stats.count > 0 ? Math.round(state.stats.totalTime / state.stats.count) : 0;
+      if (document.getElementById('stat-time')) {
+        document.getElementById('stat-time').textContent = avgTime + ' ms';
+      }
+
+      updateProcessesInfo();
+    }
+
+    function startSimulation() {
+      if (!state.isRunning) {
+        state.isRunning = true;
+        state.isPaused = false;
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('pauseBtn').disabled = false;
+
+        state.processes.forEach((proc, index) => {
+          setTimeout(() => {
+            requestCriticalSection(proc);
+          }, 300 * index);
+        });
+      }
+    }
+
+    function pauseSimulation() {
+      state.isPaused = !state.isPaused;
+      document.getElementById('pauseBtn').textContent = state.isPaused ? '▶ Reanudar' : '⏸ Pausar';
+    }
+
+    function resetSimulation() {
+      state.isRunning = false;
+      state.isPaused = false;
+      state.processes.forEach((proc) => proc.reset());
+      state.messages = [];
+      state.stats = { requests: 0, acks: 0, cs: 0, messages: 0, totalTime: 0, count: 0 };
+
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('pauseBtn').disabled = true;
+      document.getElementById('pauseBtn').textContent = '⏸ Pausar';
+
+      updateStats();
+      updateMessagesLog();
+    }
+
+    function updateSpeed(value) {
+      state.speed = parseFloat(value);
+      document.getElementById('speedValue').textContent = value + 'x';
+    }
+
+    setInterval(() => {
+      if (state.isRunning && !state.isPaused) {
+        updateStats();
+      }
+    }, 500);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initSimulation();
+      drawNetwork();
+      updateStats();
+      updateMessagesLog();
+    });
+  </script>
+</body>
+</html>
