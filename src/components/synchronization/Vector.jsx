@@ -1,17 +1,34 @@
 import React, { useState } from "react";
 import styled from "styled-components";
+import Navbar from "../Navbar";
+
+// --- Constantes de Color ---
+const COLORS = {
+  bgDark: "#0A0E17",
+  bgCard: "#111624",
+  textPrimary: "#FFFFFF",
+  textSecondary: "#A0AABF",
+  accentOrange: "#FF9F43",
+  accentBlue: "#43B5F9",
+  tagBg: "#211D12",
+  tagText: "#FFD082",
+};
 
 export default function VectorClocksSimulation() {
   const [p1, setP1] = useState([0, 0]);
   const [p2, setP2] = useState([0, 0]);
-  const [log, setLog] = useState([]);
+  const [logs, setLogs] = useState([]);
+
+  const addLog = (message) => {
+    setLogs((prev) => [message, ...prev.slice(0, 10)]);
+  };
 
   // Evento interno P1
   const eventP1 = () => {
     const newV = [...p1];
     newV[0]++;
     setP1(newV);
-    setLog(prev => [...prev, `P1 evento → [${newV}]`]);
+    addLog(`P1: Evento local → [${newV.join(", ")}]`);
   };
 
   // Evento interno P2
@@ -19,26 +36,20 @@ export default function VectorClocksSimulation() {
     const newV = [...p2];
     newV[1]++;
     setP2(newV);
-    setLog(prev => [...prev, `P2 evento → [${newV}]`]);
+    addLog(`P2: Evento local → [${newV.join(", ")}]`);
   };
 
   // P1 → P2
   const sendP1toP2 = () => {
-    // P1 incrementa antes de enviar
     const sendV = [...p1];
-    sendV[0]++;
+    sendV[0]++; // Incrementa antes de enviar
     setP1(sendV);
 
-    // P2 recibe y hace merge
     const merged = p2.map((v, i) => Math.max(v, sendV[i]));
-    merged[1]++; // evento de recepción
-
+    merged[1]++; // Incrementa al recibir
     setP2(merged);
 
-    setLog(prev => [
-      ...prev,
-      `P1 envía [${sendV}] → P2 recibe [${merged}]`
-    ]);
+    addLog(`MSG: P1 [${sendV.join(", ")}] ➔ P2 [${merged.join(", ")}]`);
   };
 
   // P2 → P1
@@ -49,93 +60,251 @@ export default function VectorClocksSimulation() {
 
     const merged = p1.map((v, i) => Math.max(v, sendV[i]));
     merged[0]++;
-
     setP1(merged);
 
-    setLog(prev => [
-      ...prev,
-      `P2 envía [${sendV}] → P1 recibe [${merged}]`
-    ]);
+    addLog(`MSG: P2 [${sendV.join(", ")}] ➔ P1 [${merged.join(", ")}]`);
   };
 
   return (
-    <Container>
-      <Title>Relojes Vectoriales</Title>
+    <Wrapper>
+      <Navbar />
+      <MainPage>
+        {/* --- Encabezado --- */}
+        <Header>
+          <ProtocolTag>ESTADO GLOBAL PARCIAL</ProtocolTag>
+          <Title>
+            Relojes <Accent>Vectoriales</Accent>
+          </Title>
+        </Header>
 
-      <Processes>
-        <Box>
-          <h3>Proceso 1</h3>
-          <Time>[{p1.join(", ")}]</Time>
-          <Button onClick={eventP1}>Evento</Button>
-        </Box>
+        <ContentGrid>
+          {/* --- Área de Simulación (Izquierda) --- */}
+          <SimulationArea>
+            <DescriptionCard>
+              <p>
+                A diferencia de Lamport, los <strong>Relojes Vectoriales</strong> mantienen un contador por cada proceso en el sistema.
+              </p>
+              <p>
+                Al recibir un mensaje, el proceso toma el <strong>máximo componente a componente</strong> del vector recibido y su propio vector, incrementando luego su propia posición. Esto permite identificar eventos <em>concurrentes</em>.
+              </p>
+            </DescriptionCard>
 
-        <Box>
-          <h3>Proceso 2</h3>
-          <Time>[{p2.join(", ")}]</Time>
-          <Button onClick={eventP2}>Evento</Button>
-        </Box>
-      </Processes>
+            <GraphContainer>
+              <VectorGrid>
+                {/* Proceso 1 */}
+                <ProcessNode border={COLORS.accentBlue}>
+                  <NodeLabel>PROCESO P1</NodeLabel>
+                  <VectorDisplay>
+                    <Bracket>[</Bracket>
+                    <Val highlight>{p1[0]}</Val>
+                    <Separator>,</Separator>
+                    <Val>{p1[1]}</Val>
+                    <Bracket>]</Bracket>
+                  </VectorDisplay>
+                  <ActionButton onClick={eventP1}>Evento Local</ActionButton>
+                </ProcessNode>
 
-      <ButtonsRow>
-        <Button onClick={sendP1toP2}>P1 → P2</Button>
-        <Button onClick={sendP2toP1}>P2 → P1</Button>
-      </ButtonsRow>
+                {/* Controles de Comunicación */}
+                <ControlGroup>
+                   <TransferBtn onClick={sendP1toP2}>Enviar a P2 ➔</TransferBtn>
+                   <TransferBtn onClick={sendP2toP1}>❮ Enviar a P1</TransferBtn>
+                </ControlGroup>
 
-      <LogBox>
-        {log.map((l, i) => (
-          <p key={i}>{l}</p>
-        ))}
-      </LogBox>
-    </Container>
+                {/* Proceso 2 */}
+                <ProcessNode border={COLORS.accentOrange}>
+                  <NodeLabel>PROCESO P2</NodeLabel>
+                  <VectorDisplay>
+                    <Bracket>[</Bracket>
+                    <Val>{p2[0]}</Val>
+                    <Separator>,</Separator>
+                    <Val highlight>{p2[1]}</Val>
+                    <Bracket>]</Bracket>
+                  </VectorDisplay>
+                  <ActionButton onClick={eventP2}>Evento Local</ActionButton>
+                </ProcessNode>
+              </VectorGrid>
+            </GraphContainer>
+          </SimulationArea>
+
+          {/* --- Monitor (Derecha) --- */}
+          <MonitorArea>
+            <MonitorHeader>HISTORIAL DE VECTORES</MonitorHeader>
+            <LogListContainer>
+              {logs.length === 0 ? (
+                <LogItem empty>Sincronización lista...</LogItem>
+              ) : (
+                logs.map((l, i) => <LogItem key={i}>{l}</LogItem>)
+              )}
+            </LogListContainer>
+          </MonitorArea>
+        </ContentGrid>
+      </MainPage>
+    </Wrapper>
   );
 }
 
-const Container = styled.div`
-  text-align: center;
-  margin-top: 40px;
-  font-family: Arial, sans-serif;
+// --- Styled Components ---
+
+const Wrapper = styled.div`
+  min-height: 100vh;
+  background-color: ${COLORS.bgDark};
+  color: ${COLORS.textPrimary};
+  font-family: 'Segoe UI', sans-serif;
 `;
 
-const Title = styled.h2``;
+const MainPage = styled.main`
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 40px 20px;
+`;
 
-const Processes = styled.div`
+const Header = styled.div`
   display: flex;
-  justify-content: center;
-  gap: 40px;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
 `;
 
-const Box = styled.div`
-  border: 1px solid #ccc;
-  padding: 20px;
-  border-radius: 10px;
-`;
-
-const Time = styled.p`
-  font-size: 22px;
+const ProtocolTag = styled.span`
+  background: ${COLORS.tagBg};
+  color: ${COLORS.tagText};
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
   font-weight: bold;
 `;
 
-const ButtonsRow = styled.div`
-  margin-top: 20px;
+const Title = styled.h2`
+  font-size: 1.8rem;
+  margin: 0;
 `;
 
-const Button = styled.button`
-  margin: 10px;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 8px;
-  background-color: #4cafef;
-  color: white;
-  cursor: pointer;
+const Accent = styled.span`
+  color: ${COLORS.accentOrange};
+`;
 
+const ContentGrid = styled.div`
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+`;
+
+const SimulationArea = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const DescriptionCard = styled.div`
+  background: ${COLORS.bgCard};
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+  color: ${COLORS.textSecondary};
+  font-size: 0.9rem;
+`;
+
+const GraphContainer = styled.div`
+  background: ${COLORS.bgCard};
+  border-radius: 12px;
+  padding: 60px 20px;
+  border: 1px solid rgba(255,255,255,0.05);
+`;
+
+const VectorGrid = styled.div`
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+`;
+
+const ProcessNode = styled.div`
+  background: #0D111B;
+  padding: 30px 20px;
+  border-radius: 15px;
+  width: 200px;
+  text-align: center;
+  border: 1px solid ${props => props.border};
+  box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+`;
+
+const NodeLabel = styled.div`
+  font-size: 0.7rem;
+  color: ${COLORS.textSecondary};
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+`;
+
+const VectorDisplay = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Courier New', monospace;
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+`;
+
+const Bracket = styled.span` color: ${COLORS.textSecondary}; `;
+const Val = styled.span` color: ${props => props.highlight ? COLORS.accentOrange : COLORS.textPrimary}; `;
+const Separator = styled.span` color: ${COLORS.textSecondary}; margin: 0 5px; `;
+
+const ActionButton = styled.button`
+  background: transparent;
+  color: ${COLORS.textPrimary};
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  &:hover { background: rgba(255,255,255,0.05); }
+`;
+
+const ControlGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+`;
+
+const TransferBtn = styled.button`
+  background: ${COLORS.accentBlue}11;
+  color: ${COLORS.accentBlue};
+  border: 1px solid ${COLORS.accentBlue}44;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
   &:hover {
-    background-color: #3a9edc;
+    background: ${COLORS.accentBlue};
+    color: #000;
   }
 `;
 
-const LogBox = styled.div`
-  margin-top: 20px;
-  text-align: left;
-  max-width: 400px;
-  margin-inline: auto;
+const MonitorArea = styled.div`
+  background: ${COLORS.bgCard};
+  padding: 25px;
+  border-radius: 12px;
+`;
+
+const MonitorHeader = styled.h4`
+  font-size: 0.8rem;
+  color: ${COLORS.textSecondary};
+  margin: 0 0 20px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 10px;
+`;
+
+const LogListContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const LogItem = styled.div`
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: ${props => props.empty ? COLORS.textSecondary : COLORS.accentOrange};
+  background: rgba(255, 159, 67, 0.05);
+  padding: 8px;
+  border-radius: 4px;
 `;
