@@ -2,18 +2,6 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import Navbar from "../Navbar";
 
-// --- Constantes de Color ---
-const COLORS = {
-  bgDark: "#0A0E17",
-  bgCard: "#111624",
-  textPrimary: "#FFFFFF",
-  textSecondary: "#A0AABF",
-  accentOrange: "#FF9F43",
-  accentBlue: "#43B5F9",
-  tagBg: "#211D12",
-  tagText: "#FFD082",
-};
-
 export default function CristianSimulation() {
   // --- Tu Lógica Original ---
   const [clientOffset, setClientOffset] = useState(Math.random() * 5000 + 5000);
@@ -136,6 +124,18 @@ export default function CristianSimulation() {
     </Wrapper>
   );
 }
+
+// --- Constantes de Color ---
+const COLORS = {
+  bgDark: "#0A0E17",
+  bgCard: "#111624",
+  textPrimary: "#FFFFFF",
+  textSecondary: "#A0AABF",
+  accentOrange: "#FF9F43",
+  accentBlue: "#43B5F9",
+  tagBg: "#211D12",
+  tagText: "#FFD082",
+};
 
 // --- Styled Components ---
 

@@ -1,18 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import styled from "styled-components";
 import Navbar from "../Navbar";
-// --- Constantes de Color (basadas en la imagen del compañero) ---
-const COLORS = {
-  bgDark: "#0A0E17",
-  bgCard: "#111624",
-  textPrimary: "#FFFFFF",
-  textSecondary: "#A0AABF",
-  accentOrange: "#FF9F43",
-  accentBlue: "#43B5F9",
-  tagBg: "#211D12",
-  tagText: "#FFD082",
-};
-
 export default function BerkeleySimulation() {
   // --- Tu Lógica Original (Mantenida) ---
   const [clients, setClients] = useState([
@@ -150,6 +138,17 @@ export default function BerkeleySimulation() {
     </MainPage>
   );
 }
+
+const COLORS = {
+  bgDark: "#0A0E17",
+  bgCard: "#111624",
+  textPrimary: "#FFFFFF",
+  textSecondary: "#A0AABF",
+  accentOrange: "#FF9F43",
+  accentBlue: "#43B5F9",
+  tagBg: "#211D12",
+  tagText: "#FFD082",
+};
 
 // --- Componentes Estilizados (Styled Components) ---
 

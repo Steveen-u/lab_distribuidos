@@ -2,18 +2,6 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import Navbar from "../Navbar";
 
-// --- Constantes de Color ---
-const COLORS = {
-  bgDark: "#0A0E17",
-  bgCard: "#111624",
-  textPrimary: "#FFFFFF",
-  textSecondary: "#A0AABF",
-  accentOrange: "#FF9F43",
-  accentBlue: "#43B5F9",
-  tagBg: "#211D12",
-  tagText: "#FFD082",
-};
-
 export default function LamportSimulation() {
   const [p1, setP1] = useState(0);
   const [p2, setP2] = useState(0);
@@ -129,6 +117,18 @@ export default function LamportSimulation() {
     </Wrapper>
   );
 }
+
+// --- Constantes de Color ---
+const COLORS = {
+  bgDark: "#0A0E17",
+  bgCard: "#111624",
+  textPrimary: "#FFFFFF",
+  textSecondary: "#A0AABF",
+  accentOrange: "#FF9F43",
+  accentBlue: "#43B5F9",
+  tagBg: "#211D12",
+  tagText: "#FFD082",
+};
 
 // --- Styled Components ---
 
